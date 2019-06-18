@@ -96,54 +96,64 @@ VOLUME /var/lib/docker
 COPY dockerd-entrypoint.sh /usr/local/bin/
 
 ENV PATH="/usr/local/bin:$PATH" \
-    GPG_KEY="C01E1CAD5EA2C4F0B8E3571504C367C218ADD4FF" \
-    PYTHON_VERSION="2.7.12" \
+    GPG_KEY="26DEA9D4613391EF3E25C9FF0A5B101836580288" \
+    PYTHON_VERSION="3.3.6" \
     PYTHON_PIP_VERSION="8.1.2"
 
 RUN set -ex \
     && apt-get update \
     && apt-get install -y --no-install-recommends tcl-dev tk-dev \
     && rm -rf /var/lib/apt/lists/* \
-	\
-	&& wget -O python.tar.xz "https://www.python.org/ftp/python/${PYTHON_VERSION%%[a-z]*}/Python-$PYTHON_VERSION.tar.xz" \
-	&& wget -O python.tar.xz.asc "https://www.python.org/ftp/python/${PYTHON_VERSION%%[a-z]*}/Python-$PYTHON_VERSION.tar.xz.asc" \
-	&& export GNUPGHOME="$(mktemp -d)" \
+    \
+    && wget -O python.tar.xz "https://www.python.org/ftp/python/${PYTHON_VERSION%%[a-z]*}/Python-$PYTHON_VERSION.tar.xz" \
+    && wget -O python.tar.xz.asc "https://www.python.org/ftp/python/${PYTHON_VERSION%%[a-z]*}/Python-$PYTHON_VERSION.tar.xz.asc" \
+    && export GNUPGHOME="$(mktemp -d)" \
 	&& (gpg --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys "$GPG_KEY" \
         || gpg --keyserver pgp.mit.edu --recv-keys "$GPG_KEY" \
         || gpg --keyserver keyserver.ubuntu.com --recv-keys "$GPG_KEY") \
-	&& gpg --batch --verify python.tar.xz.asc python.tar.xz \
-	&& rm -r "$GNUPGHOME" python.tar.xz.asc \
-	&& mkdir -p /usr/src/python \
-	&& tar -xJC /usr/src/python --strip-components=1 -f python.tar.xz \
-	&& rm python.tar.xz \
-	\
-	&& cd /usr/src/python \
-	&& ./configure \
-		--enable-shared \
-		--enable-unicode=ucs4 \
-	&& make -j$(nproc) \
-	&& make install \
-	&& ldconfig \
-	\
-		&& wget -O /tmp/get-pip.py 'https://bootstrap.pypa.io/get-pip.py' \
-		&& python2 /tmp/get-pip.py "pip==$PYTHON_PIP_VERSION" \
-		&& rm /tmp/get-pip.py \
+    && gpg --batch --verify python.tar.xz.asc python.tar.xz \
+    && rm -r "$GNUPGHOME" python.tar.xz.asc \
+    && mkdir -p /usr/src/python \
+    && tar -xJC /usr/src/python --strip-components=1 -f python.tar.xz \
+    && rm python.tar.xz \
+    \
+    && cd /usr/src/python \
+    && ./configure \
+        --enable-loadable-sqlite-extensions \
+        --enable-shared \
+    && make -j$(nproc) \
+    && make install \
+    && ldconfig \
+    \
+# explicit path to "pip3" to ensure distribution-provided "pip3" cannot interfere
+    && if [ ! -e /usr/local/bin/pip3 ]; then : \
+        && wget -O /tmp/get-pip.py 'https://bootstrap.pypa.io/get-pip.py' \
+        && python3 /tmp/get-pip.py "pip==$PYTHON_PIP_VERSION" \
+        && rm /tmp/get-pip.py \
+    ; fi \
 # we use "--force-reinstall" for the case where the version of pip we're trying to install is the same as the version bundled with Python
 # ("Requirement already up-to-date: pip==8.1.2 in /usr/local/lib/python3.6/site-packages")
 # https://github.com/docker-library/python/pull/143#issuecomment-241032683
-	&& pip install --no-cache-dir --upgrade --force-reinstall "pip==$PYTHON_PIP_VERSION" \
-        && pip install awscli==1.* --no-cache-dir \
+    && pip3 install --no-cache-dir --upgrade --force-reinstall "pip==$PYTHON_PIP_VERSION" \
+    && pip install awscli==1.* --no-cache-dir \
 # then we use "pip list" to ensure we don't have more than one pip version installed
 # https://github.com/docker-library/python/pull/100
-	&& [ "$(pip list |tac|tac| awk -F '[ ()]+' '$1 == "pip" { print $2; exit }')" = "$PYTHON_PIP_VERSION" ] \
-	\
-	&& find /usr/local -depth \
-		\( \
-			\( -type d -a -name test -o -name tests \) \
-			-o \
-			\( -type f -a -name '*.pyc' -o -name '*.pyo' \) \
-		\) -exec rm -rf '{}' + \
-	&& apt-get purge -y --auto-remove tcl-dev tk-dev \
-    && rm -rf /usr/src/python ~/.cache
+    && [ "$(pip list |tac|tac| awk -F '[ ()]+' '$1 == "pip" { print $2; exit }')" = "$PYTHON_PIP_VERSION" ] \
+    \
+    && find /usr/local -depth \
+        \( \
+            \( -type d -a -name test -o -name tests \) \
+            -o \
+            \( -type f -a -name '*.pyc' -o -name '*.pyo' \) \
+        \) -exec rm -rf '{}' + \
+    && apt-get purge -y --auto-remove tcl-dev tk-dev \
+    && rm -rf /usr/src/python ~/.cache \
+    && cd /usr/local/bin \
+    && { [ -e easy_install ] || ln -s easy_install-* easy_install; } \
+    && ln -s idle3 idle \
+    && ln -s pydoc3 pydoc \
+    && ln -s python3 python \
+    && ln -s python3-config python-config \
+    && rm -fr /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-CMD ["python2"]
+CMD ["python3"]
