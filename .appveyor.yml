@@ -44,7 +44,7 @@ build_script:
         git checkout .
         git clean -fdx
         git checkout -b $tag
-        git pull
+        git pull origin $tag
         Write-Host ($directory)
         Write-Host ($tag)
 
