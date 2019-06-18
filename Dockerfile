@@ -12,12 +12,14 @@
 
 FROM ubuntu:14.04.5
 
+ENV LANG="C.UTF-8"
+
 ENV DOCKER_BUCKET="download.docker.com" \
-    DOCKER_VERSION="18.09.0" \
+    DOCKER_VERSION="17.09.0-ce" \
     DOCKER_CHANNEL="stable" \
-    DOCKER_SHA256="08795696e852328d66753963249f4396af2295a7fe2847b839f7102e25e47cb9" \
+    DOCKER_SHA256="a9e90a73c3cdfbf238f148e1ec0eaff5eb181f92f35bdd938fd7dab18e1c4647" \
     DIND_COMMIT="3b5fac462d21ca164b3778647420016315289034" \
-    DOCKER_COMPOSE_VERSION="1.23.2" \
+    DOCKER_COMPOSE_VERSION="1.21.2" \
     GITVERSION_VERSION="3.6.5"
 
 # Install git, SSH, and other utilities
@@ -39,26 +41,26 @@ RUN set -ex \
     && ssh-keyscan -t rsa,dsa -H github.com >> ~/.ssh/known_hosts \
     && ssh-keyscan -t rsa,dsa -H bitbucket.org >> ~/.ssh/known_hosts \
     && chmod 600 ~/.ssh/known_hosts \
-    && apt-get install -y --no-install-recommends \
-       wget=1.15-* python3=3.4.* python3.4-dev=3.4.* fakeroot=1.20-* ca-certificates jq \
-       tar=1.27.* gzip=1.6-* zip=3.0-* autoconf=2.69-* automake=1:1.14.* \
-       bzip2=1.0.* file=1:5.14-* g++=4:4.8.* gcc=4:4.8.* imagemagick=8:6.7.* \
-       libbz2-dev=1.0.* libc6-dev=2.19-* libcurl4-openssl-dev=7.35.* libdb-dev=1:5.3.* \
-       libevent-dev=2.0.* libffi-dev=3.1~* libgeoip-dev=1.6.* libglib2.0-dev=2.40.* \
-       libjpeg-dev=8c-* libkrb5-dev=1.12+* liblzma-dev=5.1.* \
-       libmagickcore-dev=8:6.7.* libmagickwand-dev=8:6.7.* libmysqlclient-dev=5.5.* \
-       libncurses5-dev=5.9+* libpng12-dev=1.2.* libpq-dev=9.3.* libreadline-dev=6.3-* \
-       libsqlite3-dev=3.8.* libssl-dev=1.0.* libtool=2.4.* libwebp-dev=0.4.* \
-       libxml2-dev=2.9.* libxslt1-dev=1.1.* libyaml-dev=0.1.* make=3.81-* \
-       patch=2.7.* xz-utils=5.1.* zlib1g-dev=1:1.2.* unzip=6.0-* curl=7.35.* \
-       e2fsprogs=1.42.* iptables=1.4.* xfsprogs=3.1.* xz-utils=5.1.* \
-       mono-devel=5.* less=458-* groff=1.22.* liberror-perl=0.17-* \
-       asciidoc=8.6.* build-essential=11.* bzr=2.6.* cvs=2:1.12.* cvsps=2.1-* docbook-xml=4.5-* docbook-xsl=1.78.* dpkg-dev=1.17.* \
-       libdbd-sqlite3-perl=1.40-* libdbi-perl=1.630-* libdpkg-perl=1.17.* libhttp-date-perl=6.02-* \
-       libio-pty-perl=1:1.08-* libserf-1-1=1.3.* libsvn-perl=1.8.* libsvn1=1.8.* libtcl8.6=8.6.* libtimedate-perl=2.3000-* \
-       libunistring0=0.9.* libxml2-utils=2.9.* libyaml-perl=0.84-* python-bzrlib=2.6.* python-configobj=4.7.* \
-       sgml-base=1.26+* sgml-data=2.0.* subversion=1.8.* tcl=8.6.* tcl8.6=8.6.* xml-core=0.13+* xmlto=0.0.* xsltproc=1.1.* python3-pip \
-       tk=8.6.* gettext=0.18.* gettext-base=0.18.* libapr1=1.5.* libaprutil1=1.5.* libasprintf0c2=0.18.*  \
+    && apt-get install -y --no-install-recommends wget=1.15-* fakeroot=1.20-* ca-certificates \
+        autoconf=2.69-* automake=1:1.14.* less=458-* groff=1.22.* \
+        bzip2=1.0.* file=1:5.14-* g++=4:4.8.* gcc=4:4.8.* imagemagick=8:6.7.* \
+        libbz2-dev=1.0.* libc6-dev=2.19-*  curl=7.35.* \
+        libdb-dev=1:5.3.* libevent-dev=2.0.* libffi-dev=3.1~* \
+        libgeoip-dev=1.6.* libglib2.0-dev=2.40.* libjpeg-dev=8c-* \
+        libkrb5-dev=1.12+* liblzma-dev=5.1.* libmagickcore-dev=8:6.7.* \
+        libmagickwand-dev=8:6.7.* libmysqlclient-dev=5.5.* libncurses5-dev=5.9+* \
+        libpng12-dev=1.2.* libpq-dev=9.3.* libreadline-dev=6.3-* libsqlite3-dev=3.8.* \
+        libssl-dev=1.0.* libtool=2.4.* libwebp-dev=0.4.* libxml2-dev=2.9.* \
+        libxslt1-dev=1.1.* libyaml-dev=0.1.* make=3.81-* patch=2.7.* xz-utils=5.1.* \
+        zlib1g-dev=1:1.2.* tcl=8.6.* tk=8.6.* \
+        e2fsprogs=1.42.* iptables=1.4.* xfsprogs=3.1.* xz-utils=5.1.* \
+        mono-devel liberror-perl=0.17-* unzip=6.0-*\
+        asciidoc=8.6.* build-essential=11.* bzr=2.6.* cvs=2:1.12.* cvsps=2.1-* docbook-xml=4.5-* docbook-xsl=1.78.* dpkg-dev=1.17.* \
+        gettext=0.18.* gettext-base=0.18.* libapr1=1.5.* libaprutil1=1.5.* libasprintf0c2=0.18.*  \
+        libdbd-sqlite3-perl=1.40-* libdbi-perl=1.630-* libdpkg-perl=1.17.* libhttp-date-perl=6.02-* \
+        libio-pty-perl=1:1.08-* libserf-1-1=1.3.* libsvn-perl=1.8.* libsvn1=1.8.* libtcl8.6=8.6.* libtimedate-perl=2.3000-* \
+        libunistring0=0.9.* libxml2-utils=2.9.* libyaml-perl=0.84-* python-bzrlib=2.6.* python-configobj=4.7.* \
+        sgml-base=1.26+* sgml-data=2.0.* subversion=1.8.* tcl=8.6.* tcl8.6=8.6.* xml-core=0.13+* xmlto=0.0.* xsltproc=1.1.* \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
@@ -89,132 +91,59 @@ RUN set -ex \
 # Ensure docker-compose works
     && docker-compose version
 
-# Install dependencies by all python images equivalent to buildpack-deps:jessie
-# on the public repos.
-
-RUN set -ex \
-    && pip3 install awscli boto3
-
 VOLUME /var/lib/docker
-
-# Configure SSH
-COPY ssh_config /root/.ssh/config
 
 COPY dockerd-entrypoint.sh /usr/local/bin/
 
- 
- ENV GPG_KEYS A917B1ECDA84AEC2B568FED6F50ABC807BD5DCD0 528995BFEDFBA7191D46839EF9BA0ADA31CBD89E 1729F83938DA44E27BA0F4D3DBDB397470D12172
- ENV SRC_DIR="/usr/src" \
-     PHP_VERSION=7.1.16 \
-     PHP_DOWNLOAD_SHA="a5d67e477248a3911af7ef85c8400c1ba8cd632184186fd31070b96714e669f1" \
-     PHPPATH="/php" \
-     PHP_INI_DIR="/usr/local/etc/php" \
-     PHP_CFLAGS="-fstack-protector -fpic -fpie -O2" \
-     PHP_LDFLAGS="-Wl,-O1 -Wl,--hash-style=both -pie"
- 
- ENV PHP_SRC_DIR="$SRC_DIR/php" \
-     PHP_CPPFLAGS="$PHP_CFLAGS" \
-     PHP_URL="https://secure.php.net/get/php-$PHP_VERSION.tar.xz/from/this/mirror" \
-     PHP_ASC_URL="https://secure.php.net/get/php-$PHP_VERSION.tar.xz.asc/from/this/mirror"
- 
- # Install PHP
- RUN set -xe; \
-     mkdir -p $SRC_DIR; \
-     cd $SRC_DIR; \
-     wget -O php.tar.xz "$PHP_URL"; \
-     echo "$PHP_DOWNLOAD_SHA *php.tar.xz" | sha256sum -c -; \
-     wget -O php.tar.xz.asc "$PHP_ASC_URL"; \
-     export GNUPGHOME="$(mktemp -d)"; \
-     for key in $GPG_KEYS; do \
-        gpg --batch --keyserver ha.pool.sks-keyservers.net --recv-keys "$key"; \
-     done; \
-     gpg --batch --verify php.tar.xz.asc php.tar.xz; \
-     rm -rf "$GNUPGHOME"; \
- 
-     set -eux; \
-     savedAptMark="$(apt-mark showmanual)"; \
-     apt-get update; \
-     apt-get install -y --no-install-recommends libedit-dev=3.1-* dpkg-dev=1.17.*; \
-     rm -rf /var/lib/apt/lists/*; \
-     apt-get clean; \
- 
-     export \
-         CFLAGS="$PHP_CFLAGS" \
-         CPPFLAGS="$PHP_CPPFLAGS" \
-         LDFLAGS="$PHP_LDFLAGS" \
-     ; \
-     mkdir -p $PHP_SRC_DIR; \
-     tar -Jxf $SRC_DIR/php.tar.xz -C $PHP_SRC_DIR --strip-components=1; \
-     cd $SRC_DIR/php; \
-     gnuArch="$(dpkg-architecture -qDEB_BUILD_GNU_TYPE)"; \
-     debMultiarch="$(dpkg-architecture -qDEB_BUILD_MULTIARCH)"; \
- 
-     # https://bugs.php.net/bug.php?id=74125
-     if [ ! -d /usr/include/curl ]; then \
-         ln -sT "/usr/include/$debMultiarch/curl" /usr/local/include/curl; \
-     fi; \
-     ./configure \
-         --build="$gnuArch" \
-         --with-config-file-path="$PHP_INI_DIR" \
-         --with-config-file-scan-dir="$PHP_INI_DIR/conf.d" \
-         --disable-cgi \
-     # --enable-ftp is included here because ftp_ssl_connect() needs ftp to be compiled statically (see https://github.com/docker-library/php/issues/236)
-         --enable-ftp \
-     # --enable-mbstring is included here because otherwise there's no way to get pecl to use it properly (see https://github.com/docker-library/php/issues/195)
-         --enable-mbstring \
-     # --enable-mysqlnd is included here because it's harder to compile after the fact than extensions are (since it's a plugin for several extensions, not an extension in itself)
-         --enable-mysqlnd \
-         --enable-sockets \
-         --enable-pcntl \
-     # https://wiki.php.net/rfc/argon2_password_hash (7.2+)
-         --with-password-argon2 \
-         --with-curl \
-         --with-pdo-pgsql \
-         --with-pdo-mysql \
-         --with-libedit \
-         --with-openssl \
-         --with-zlib \
-     # bundled pcre does not support JIT on s390x
- 
-     # https://manpages.debian.org/stretch/libpcre3-dev/pcrejit.3.en.html#AVAILABILITY_OF_JIT_SUPPORT
-     $(test "$gnuArch" = 's390x-linux-gnu' && echo '--without-pcre-jit') \
-         --with-libdir="lib/$debMultiarch" \
-     ${PHP_EXTRA_CONFIGURE_ARGS:-} \
-     ; \
-     make -j "$(nproc)"; \
-     make test; \
-     make install; \
-     find /usr/local/bin /usr/local/sbin -type f -executable -exec strip --strip-all '{}' + || true; \
-     make clean; \
-     cd /; \
-     rm -rf $PHP_SRC_DIR; \
- 
-     # reset apt-mark's "manual" list so that "purge --auto-remove" will remove all build dependencies
-     apt-mark auto '.*' > /dev/null; \
-     [ -z "$savedAptMark" ] || apt-mark manual $savedAptMark; \
-     find /usr/local -type f -executable -exec ldd '{}' ';' \
-         | awk '/=>/ { print $(NF-1) }' \
-         | sort -u \
-         | xargs -r dpkg-query --search \
-         | cut -d: -f1 \
-         | sort -u \
-         | xargs -r apt-mark manual \
-     ; \
-     apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
-     php --version; \
-     pecl update-channels; \
-     rm -rf /tmp/pear ~/.pearrc; \
- 
-     # Increase the memory size, default is 128M
-     mkdir "$PHP_INI_DIR"; \
-     mkdir "$PHP_INI_DIR/conf.d"; \
-     touch "$PHP_INI_DIR/conf.d/memory.ini" \
-     && echo "memory_limit = 1G;" >> "$PHP_INI_DIR/conf.d/memory.ini";
- 
- ENV PATH="$PHPPATH/bin:/usr/local/php/bin:$PATH"
- 
- # Install Composer globally
- RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/bin --filename=composer
- 
- WORKDIR $PHPPATH
- 
+ENV PATH="/usr/local/bin:$PATH" \
+    GPG_KEY="C01E1CAD5EA2C4F0B8E3571504C367C218ADD4FF" \
+    PYTHON_VERSION="2.7.12" \
+    PYTHON_PIP_VERSION="8.1.2"
+
+RUN set -ex \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends tcl-dev tk-dev \
+    && rm -rf /var/lib/apt/lists/* \
+	\
+	&& wget -O python.tar.xz "https://www.python.org/ftp/python/${PYTHON_VERSION%%[a-z]*}/Python-$PYTHON_VERSION.tar.xz" \
+	&& wget -O python.tar.xz.asc "https://www.python.org/ftp/python/${PYTHON_VERSION%%[a-z]*}/Python-$PYTHON_VERSION.tar.xz.asc" \
+	&& export GNUPGHOME="$(mktemp -d)" \
+	&& (gpg --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys "$GPG_KEY" \
+        || gpg --keyserver pgp.mit.edu --recv-keys "$GPG_KEY" \
+        || gpg --keyserver keyserver.ubuntu.com --recv-keys "$GPG_KEY") \
+	&& gpg --batch --verify python.tar.xz.asc python.tar.xz \
+	&& rm -r "$GNUPGHOME" python.tar.xz.asc \
+	&& mkdir -p /usr/src/python \
+	&& tar -xJC /usr/src/python --strip-components=1 -f python.tar.xz \
+	&& rm python.tar.xz \
+	\
+	&& cd /usr/src/python \
+	&& ./configure \
+		--enable-shared \
+		--enable-unicode=ucs4 \
+	&& make -j$(nproc) \
+	&& make install \
+	&& ldconfig \
+	\
+		&& wget -O /tmp/get-pip.py 'https://bootstrap.pypa.io/get-pip.py' \
+		&& python2 /tmp/get-pip.py "pip==$PYTHON_PIP_VERSION" \
+		&& rm /tmp/get-pip.py \
+# we use "--force-reinstall" for the case where the version of pip we're trying to install is the same as the version bundled with Python
+# ("Requirement already up-to-date: pip==8.1.2 in /usr/local/lib/python3.6/site-packages")
+# https://github.com/docker-library/python/pull/143#issuecomment-241032683
+	&& pip install --no-cache-dir --upgrade --force-reinstall "pip==$PYTHON_PIP_VERSION" \
+        && pip install awscli==1.* --no-cache-dir \
+# then we use "pip list" to ensure we don't have more than one pip version installed
+# https://github.com/docker-library/python/pull/100
+	&& [ "$(pip list |tac|tac| awk -F '[ ()]+' '$1 == "pip" { print $2; exit }')" = "$PYTHON_PIP_VERSION" ] \
+	\
+	&& find /usr/local -depth \
+		\( \
+			\( -type d -a -name test -o -name tests \) \
+			-o \
+			\( -type f -a -name '*.pyc' -o -name '*.pyo' \) \
+		\) -exec rm -rf '{}' + \
+	&& apt-get purge -y --auto-remove tcl-dev tk-dev \
+    && rm -rf /usr/src/python ~/.cache
+
+CMD ["python2"]
