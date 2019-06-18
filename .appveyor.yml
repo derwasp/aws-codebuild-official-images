@@ -44,7 +44,7 @@ build_script:
         git checkout .
         git clean -fdx
         git checkout -b $tag
-        #git pull origin $tag
+        git pull origin $tag
         Write-Host ($directory)
         Write-Host ($tag)
 
@@ -59,7 +59,7 @@ build_script:
         git add -A
         git commit -am ($tag + "[skip appveyor]")
         Write-Host ("Pushing " + $tag)
-        git push origin +HEAD
+        #git push origin +HEAD
     }
 
     popd
