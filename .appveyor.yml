@@ -22,6 +22,11 @@ install:
 
 build_script:
 - ps: |
+    function containsLike($elements, $str){
+        foreach($element in $elements) { if($element -like $str) { return $True; } }
+        return $False;
+    }
+
     Write-Host ("Cloning the official aws repo..")
 
     git clone -q https://github.com/aws/aws-codebuild-docker-images/
@@ -46,26 +51,15 @@ build_script:
 
         Write-Host ("Tag " + $tag + " in " + $directory)
 
-        Write-Host ("git checkout -q master")
-        git checkout -q master
-
-        Write-Host ("git checkout -q .")
-        git checkout -q .
-
-        Write-Host ("git clean -q -fdx")
-        git clean -q -fdx
-
-        Write-Host ("git checkout -q -b $tag")
-        git checkout -q -b $tag
-
-        Write-Host ("git checkout -q .")
-        git checkout -q .
-
-        Write-Host ("git diff")
-        git diff
-
-        Write-Host ("git pull -q origin $tag")
-        git pull -q origin $tag
+        $listBranches = git ls-remote --heads
+        if (containsLike $listBranches ("*/" + $tag)) {
+            Write-Host ("Existing branch")
+            git checkout -q $tag
+        }
+        else {
+            Write-Host ("New branch")
+            git checkout -q -b $tag
+        }
 
         Get-ChildItem -Force -Path . -Recurse |
         Select -ExpandProperty FullName |
