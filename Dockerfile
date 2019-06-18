@@ -122,9 +122,9 @@ RUN set -ex \
     && rm -rf /var/lib/apt/lists/*
 
 # Install .NET Core SDK
-ENV DOTNET_SDK_VERSION 2.1.202
+ENV DOTNET_SDK_VERSION 2.1.402
 ENV DOTNET_SDK_DOWNLOAD_URL https://dotnetcli.blob.core.windows.net/dotnet/Sdk/$DOTNET_SDK_VERSION/dotnet-sdk-$DOTNET_SDK_VERSION-linux-x64.tar.gz
-ENV DOTNET_SDK_DOWNLOAD_SHA e785b9b488b5570708eb060f9a4cb5cf94597d99a8b0a3ee449d2e5df83771c1ba643a87db17ae6727d0e2acb401eca292fb8c68ad92eeb59d7f0d75eab1c20a
+ENV DOTNET_SDK_DOWNLOAD_SHA dd7f15a8202ffa2a435b7289865af4483bb0f642ffcf98a1eb10464cb9c51dd1d771efbb6120f129fe9666f62707ba0b7c476cf1fd3536d3a29329f07456de48
 
 RUN set -ex \
     && curl -SL $DOTNET_SDK_DOWNLOAD_URL --output dotnet.tar.gz \
@@ -133,6 +133,9 @@ RUN set -ex \
     && tar -zxf dotnet.tar.gz -C /usr/share/dotnet \
     && rm dotnet.tar.gz \
     && ln -s /usr/share/dotnet/dotnet /usr/bin/dotnet
+
+# Add .NET Core Global Tools install folder to PATH
+ENV PATH "~/.dotnet/tools/:$PATH"
 
 # Trigger the population of the local package cache
 ENV NUGET_XMLDOC_MODE skip
@@ -146,9 +149,9 @@ RUN set -ex \
 
 # Install Powershell Core
 # See instructions at https://docs.microsoft.com/en-us/powershell/scripting/setup/installing-powershell-core-on-linux
-ENV POWERSHELL_VERSION 6.0.3
-ENV POWERSHELL_DOWNLOAD_URL https://github.com/PowerShell/PowerShell/releases/download/v6.0.3/powershell-6.0.3-linux-x64.tar.gz
-ENV POWERSHELL_DOWNLOAD_SHA A43D3056688FABC442BFBE0FD7A096F7E28036759EFF9D6EBE8CB9155C9D9AAB
+ENV POWERSHELL_VERSION 6.1.0
+ENV POWERSHELL_DOWNLOAD_URL https://github.com/PowerShell/PowerShell/releases/download/v6.1.0/powershell-6.1.0-linux-x64.tar.gz
+ENV POWERSHELL_DOWNLOAD_SHA 68674CFBA84ABF759C7E10EF6FCD926CBC125D9958E11A1926AF7CF7F604506C
 
 RUN set -ex \
     && curl -SL $POWERSHELL_DOWNLOAD_URL --output powershell.tar.gz \
@@ -157,4 +160,3 @@ RUN set -ex \
     && tar zxf powershell.tar.gz -C /opt/microsoft/powershell/$POWERSHELL_VERSION \
     && rm powershell.tar.gz \
     && ln -s /opt/microsoft/powershell/$POWERSHELL_VERSION/pwsh /usr/bin/pwsh
-    
