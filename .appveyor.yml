@@ -52,7 +52,7 @@ build_script:
         Copy-item -Force -Recurse -Verbose ($directory + "\*") -Destination .
         
         git add -A
-        git commit -am $tag
+        git commit -am ($tag + "[skip appveyor]")
         Write-Host ("Pushing " + $tag)
         git push origin +HEAD
     }
