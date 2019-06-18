@@ -55,17 +55,17 @@ RUN wget "https://bootstrap.pypa.io/get-pip.py" -O /tmp/get-pip.py \
 COPY tools /opt/tools
 
 ENV ANDROID_HOME="/usr/local/android-sdk-linux" \
-    JAVA_HOME="/usr/lib/jvm/java-6-oracle" \
-    JDK_HOME="/usr/lib/jvm/java-6-oracle" \
-    JAVA_VERSION="6" \
+    JAVA_HOME="/usr/lib/jvm/java-7-oracle" \
+    JDK_HOME="/usr/lib/jvm/java-7-oracle" \
+    JAVA_VERSION="7" \
     INSTALLED_GRADLE_VERSIONS="2.10 2.11 2.12 2.13 2.14.1" \
     GRADLE_VERSION="2.14.1" \
     ANDROID_TOOLS_VER="24.4.1" \
     ANDROID_TOOLS_SHA1="725bb360f0f7d04eaccff5a2d57abdd49061326d"
 ENV PATH="${PATH}:/opt/tools:${ANDROID_HOME}/tools:${ANDROID_HOME}/platform-tools" \
-    JAVA_PACKAGE_VERSION="${JAVA_VERSION}u45-0~webupd8~8"
+    JAVA_PACKAGE_VERSION="${JAVA_VERSION}u80+7u60arm-0~webupd8~1"
 
-# Install java6
+# Install java7
 RUN apt-get update \
       && apt-get install -y software-properties-common \
       && add-apt-repository -y ppa:webupd8team/java \
