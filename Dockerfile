@@ -101,10 +101,10 @@ VOLUME /var/lib/docker
 
 COPY dockerd-entrypoint.sh /usr/local/bin/
 
-ENV GPG_KEYS 0BD78B5F97500D450838F95DFE857D9A90D90EC1 6E4F6AB321FDC07F2C332E3AC2BF0BC433CFC8B3
+ENV GPG_KEYS 1A4E8B7277C42E53DBA9C7B9BCAA30EA9C0D5763 6E4F6AB321FDC07F2C332E3AC2BF0BC433CFC8B3
 ENV SRC_DIR="/usr/src" \
-    PHP_VERSION=5.6.33 \
-    PHP_DOWNLOAD_SHA="9004995fdf55f111cd9020e8b8aff975df3d8d4191776c601a46988c375f3553" \
+    PHP_VERSION=7.0.27 \
+    PHP_DOWNLOAD_SHA="4b2bc823e806dbf7b62fe0b92b0d14b0c6e03f88c3fc5d96278416c54ce11f6c" \
     PHPPATH="/php" \
     PHP_INI_DIR="/usr/local/etc/php" \
     PHP_CFLAGS="-fstack-protector -fpic -fpie -O2" \
@@ -167,6 +167,8 @@ RUN set -xe; \
         --enable-mbstring \
     # --enable-mysqlnd is included here because it's harder to compile after the fact than extensions are (since it's a plugin for several extensions, not an extension in itself)
         --enable-mysqlnd \
+    # https://wiki.php.net/rfc/argon2_password_hash (7.2+)
+        --with-password-argon2 \
         --with-curl \
         --with-libedit \
         --with-openssl \
