@@ -13,11 +13,11 @@
 FROM ubuntu:14.04.5
 
 ENV DOCKER_BUCKET="download.docker.com" \
-    DOCKER_VERSION="17.09.0-ce" \
+    DOCKER_VERSION="18.09.0" \
     DOCKER_CHANNEL="stable" \
-    DOCKER_SHA256="a9e90a73c3cdfbf238f148e1ec0eaff5eb181f92f35bdd938fd7dab18e1c4647" \
+    DOCKER_SHA256="08795696e852328d66753963249f4396af2295a7fe2847b839f7102e25e47cb9" \
     DIND_COMMIT="3b5fac462d21ca164b3778647420016315289034" \
-    DOCKER_COMPOSE_VERSION="1.21.2" \
+    DOCKER_COMPOSE_VERSION="1.23.2" \
     GITVERSION_VERSION="3.6.5"
 
 # Install git, SSH, and other utilities
@@ -29,7 +29,7 @@ RUN set -ex \
     && echo "deb https://download.mono-project.com/repo/ubuntu stable-trusty main" | tee /etc/apt/sources.list.d/mono-official-stable.list \
     && apt-get update \
     && apt-get install software-properties-common -y --no-install-recommends \
-    && apt-add-repository ppa:git-core/ppa \
+    && apt-add-repository -y ppa:git-core/ppa \
     && apt-get update \
     && apt-get install git=1:2.* -y --no-install-recommends \
     && git version \
@@ -40,7 +40,7 @@ RUN set -ex \
     && ssh-keyscan -t rsa,dsa -H bitbucket.org >> ~/.ssh/known_hosts \
     && chmod 600 ~/.ssh/known_hosts \
     && apt-get install -y --no-install-recommends \
-       wget=1.15-* python=2.7.* python2.7-dev=2.7.* fakeroot=1.20-* ca-certificates \
+       wget=1.15-* python3=3.4.* python3.4-dev=3.4.* fakeroot=1.20-* ca-certificates jq \
        tar=1.27.* gzip=1.6-* zip=3.0-* autoconf=2.69-* automake=1:1.14.* \
        bzip2=1.0.* file=1:5.14-* g++=4:4.8.* gcc=4:4.8.* imagemagick=8:6.7.* \
        libbz2-dev=1.0.* libc6-dev=2.19-* libcurl4-openssl-dev=7.35.* libdb-dev=1:5.3.* \
@@ -52,12 +52,13 @@ RUN set -ex \
        libxml2-dev=2.9.* libxslt1-dev=1.1.* libyaml-dev=0.1.* make=3.81-* \
        patch=2.7.* xz-utils=5.1.* zlib1g-dev=1:1.2.* unzip=6.0-* curl=7.35.* \
        e2fsprogs=1.42.* iptables=1.4.* xfsprogs=3.1.* xz-utils=5.1.* \
-       mono-devel less=458-* groff=1.22.* liberror-perl=0.17-* \
+       mono-devel=5.* less=458-* groff=1.22.* liberror-perl=0.17-* \
        asciidoc=8.6.* build-essential=11.* bzr=2.6.* cvs=2:1.12.* cvsps=2.1-* docbook-xml=4.5-* docbook-xsl=1.78.* dpkg-dev=1.17.* \
        libdbd-sqlite3-perl=1.40-* libdbi-perl=1.630-* libdpkg-perl=1.17.* libhttp-date-perl=6.02-* \
        libio-pty-perl=1:1.08-* libserf-1-1=1.3.* libsvn-perl=1.8.* libsvn1=1.8.* libtcl8.6=8.6.* libtimedate-perl=2.3000-* \
        libunistring0=0.9.* libxml2-utils=2.9.* libyaml-perl=0.84-* python-bzrlib=2.6.* python-configobj=4.7.* \
-       sgml-base=1.26+* sgml-data=2.0.* subversion=1.8.* tcl=8.6.* tcl8.6=8.6.* xml-core=0.13+* xmlto=0.0.* xsltproc=1.1.* \
+       sgml-base=1.26+* sgml-data=2.0.* subversion=1.8.* tcl=8.6.* tcl8.6=8.6.* xml-core=0.13+* xmlto=0.0.* xsltproc=1.1.* python3-pip \
+       tk=8.6.* gettext=0.18.* gettext-base=0.18.* libapr1=1.5.* libaprutil1=1.5.* libasprintf0c2=0.18.*  \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
@@ -92,19 +93,19 @@ RUN set -ex \
 # on the public repos.
 
 RUN set -ex \
-    && wget "https://bootstrap.pypa.io/2.6/get-pip.py" -O /tmp/get-pip.py \
-    && python /tmp/get-pip.py \
-    && pip install awscli==1.* \
-    && rm -fr /var/lib/apt/lists/* /tmp/* /var/tmp/*
+    && pip3 install awscli boto3
 
 VOLUME /var/lib/docker
 
+# Configure SSH
+COPY ssh_config /root/.ssh/config
+
 COPY dockerd-entrypoint.sh /usr/local/bin/
 
-ENV GOLANG_VERSION="1.10.6" \
-    GOLANG_DOWNLOAD_SHA256="acbdedf28b55b38d2db6f06209a25a869a36d31bdcf09fd2ec3d40e1279e0592" \
+ENV GOLANG_VERSION="1.11.3" \
+    GOLANG_DOWNLOAD_SHA256="d20a4869ffb13cee0f7ee777bf18c7b9b67ef0375f93fac1298519e0c227a07f" \
     GOPATH="/go" \
-    DEP_VERSION="0.4.1" \
+    DEP_VERSION="0.5.0" \
     DEP_BINARY="dep-linux-amd64"
 
 RUN set -ex \
