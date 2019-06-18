@@ -11,22 +11,21 @@
 
 FROM ubuntu:18.04
 
-ENV RUBY_MAJOR="2.6" \
- PYTHON_VERSION="3.7.2" \
- PHP_VERSION=7.3.1 \ 
- NODE_VERSION="10.15.0" \
- NODE_8_VERSION="8.11.0" \
- NVM_VERSION="0.33.5" \
- GOLANG_VERSION="1.11.4" \
- DOTNET_SDK_VERSION="2.2.102" \
- DOCKER_VERSION="18.09.1" \
- DOCKER_COMPOSE_VERSION="1.23.2"
-
+ENV RUBY_VERSION="2.6.3" \
+ PYTHON_VERSION="3.7.3" \
+ PHP_VERSION=7.3.5 \
+ JAVA_VERSION=11 \ 
+ NODE_VERSION="10.15.3" \
+ NODE_8_VERSION="8.15.1" \
+ GOLANG_VERSION="1.12.5" \
+ DOTNET_SDK_VERSION="2.2.203" \
+ DOCKER_VERSION="18.09.6" \
+ DOCKER_COMPOSE_VERSION="1.24.0"
 
 #****************        Utilities     ********************************************* 
 ENV DOCKER_BUCKET="download.docker.com" \    
     DOCKER_CHANNEL="stable" \
-    DOCKER_SHA256="c9959e42b637fb7362899ac1d1aeef2a966fa0ea85631da91f4c4a7a9ec29644" \
+    DOCKER_SHA256="1f3f6774117765279fce64ee7f76abbb5f260264548cf80631d68fb2d795bb09" \
     DIND_COMMIT="3b5fac462d21ca164b3778647420016315289034" \    
     GITVERSION_VERSION="4.0.0" \
     DEBIAN_FRONTEND="noninteractive" \
@@ -69,9 +68,10 @@ RUN set -ex \
        libio-pty-perl libserf-1-1 libsvn-perl libsvn1 libtcl8.6 libtimedate-perl \
        libxml2-utils libyaml-perl python-bzrlib python-configobj \
        sgml-base sgml-data subversion tcl tcl8.6 xml-core xmlto xsltproc \
-       tk gettext gettext-base libapr1 libaprutil1 xvfb expect \
+       tk gettext gettext-base libapr1 libaprutil1 xvfb expect parallel \
+       locales rsync \
     && apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF \
-    && echo "deb https://download.mono-project.com/repo/ubuntu stable-trusty main" | tee /etc/apt/sources.list.d/mono-official-stable.list \    
+    && echo "deb https://download.mono-project.com/repo/ubuntu stable-bionic main" | tee /etc/apt/sources.list.d/mono-official-stable.list \    
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
@@ -103,72 +103,42 @@ RUN set -ex \
 
 # https://docs.aws.amazon.com/eks/latest/userguide/install-aws-iam-authenticator.html https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ECS_CLI_installation.html
 RUN curl -sS -o /usr/local/bin/aws-iam-authenticator https://amazon-eks.s3-us-west-2.amazonaws.com/1.11.5/2018-12-06/bin/linux/amd64/aws-iam-authenticator \
- && curl -sS -o /usr/local/bin/kubectl https://amazon-eks.s3-us-west-2.amazonaws.com/1.11.5/2018-12-06/bin/linux/amd64/kubectl \
- && curl -sS -o /usr/local/bin/ecs-cli https://s3.amazonaws.com/amazon-ecs-cli/ecs-cli-linux-amd64-latest \
- && chmod +x /usr/local/bin/kubectl /usr/local/bin/aws-iam-authenticator /usr/local/bin/ecs-cli
+    && curl -sS -o /usr/local/bin/kubectl https://amazon-eks.s3-us-west-2.amazonaws.com/1.11.5/2018-12-06/bin/linux/amd64/kubectl \
+    && curl -sS -o /usr/local/bin/ecs-cli https://s3.amazonaws.com/amazon-ecs-cli/ecs-cli-linux-amd64-latest \
+    && chmod +x /usr/local/bin/kubectl /usr/local/bin/aws-iam-authenticator /usr/local/bin/ecs-cli
 
 RUN set -ex \
-&& pip3 install awscli boto3  
+    && pip3 install awscli boto3  
 
 VOLUME /var/lib/docker
 
 # Configure SSH
 COPY ssh_config /root/.ssh/config
 
+COPY runtimes.yml /codebuild/image/config/runtimes.yml
+
 COPY dockerd-entrypoint.sh /usr/local/bin/
 
-#****************        RUBY     ********************************************* 
-ENV RUBY_VERSION="2.6.0" \
- RUBY_DOWNLOAD_SHA256="f3c35b924a11c88ff111f0956ded3cdc12c90c04b72b266ac61076d3697fc072" \
- RUBYGEMS_VERSION="3.0.1" \
- BUNDLER_VERSION="2.0.1" \
- GEM_HOME="/usr/local/bundle"
+#**************** RUBY *********************************************************
 
-ENV BUNDLE_PATH="$GEM_HOME" \
- BUNDLE_BIN="$GEM_HOME/bin" \
- BUNDLE_SILENCE_ROOT_WARNING=1 \
- BUNDLE_APP_CONFIG="$GEM_HOME"
+ENV RBENV_SRC_DIR="/usr/local/rbenv"
 
-ENV PATH $BUNDLE_BIN:$PATH
+ENV PATH="/root/.rbenv/shims:$RBENV_SRC_DIR/bin:$RBENV_SRC_DIR/shims:$PATH" \
+    RUBY_BUILD_SRC_DIR="$RBENV_SRC_DIR/plugins/ruby-build"
 
-RUN mkdir -p /usr/local/etc \
-	&& { \
-     echo 'install: --no-document'; \
-     echo 'update: --no-document'; \
- } >> /usr/local/etc/gemrc \
- && apt-get update && apt-get install -y --no-install-recommends \
-    bison libgdbm-dev ruby \
- && wget "https://cache.ruby-lang.org/pub/ruby/$RUBY_MAJOR/ruby-$RUBY_VERSION.tar.gz" -O /tmp/ruby.tar.gz \
- && echo "$RUBY_DOWNLOAD_SHA256 /tmp/ruby.tar.gz" | sha256sum -c - \
- && mkdir -p /usr/src/ruby \
- && tar -xzf /tmp/ruby.tar.gz -C /usr/src/ruby --strip-components=1 \
- && cd /usr/src/ruby \
-	&& { \
-          echo '#define ENABLE_PATH_CHECK 0'; \
-          echo; \
-          cat file.c; \
-	   } > file.c.new \
- && mv file.c.new file.c \
- && autoconf \
- && ./configure --disable-install-doc \
- && make -j"$(nproc)" \
- && make install \
- && apt-get purge -y --auto-remove bison libgdbm-dev ruby \
- && cd / \
- && rm -r /usr/src/ruby \
- && gem update --system "$RUBYGEMS_VERSION" \
-	&& gem install bundler --version "$BUNDLER_VERSION" \
- && mkdir -p "$GEM_HOME" "$BUNDLE_BIN" \
- && chmod 777 "$GEM_HOME" "$BUNDLE_BIN" \
- && rm -fr /var/lib/apt/lists/* /tmp/* /var/tmp/*
+RUN set -ex \
+    && git clone https://github.com/rbenv/rbenv.git $RBENV_SRC_DIR \
+    && mkdir -p $RBENV_SRC_DIR/plugins \
+    && git clone https://github.com/rbenv/ruby-build.git $RUBY_BUILD_SRC_DIR \
+    && sh $RUBY_BUILD_SRC_DIR/install.sh \
+    && rbenv install $RUBY_VERSION && rbenv global $RUBY_VERSION
 
-#****************   END RUBY     ********************************************* 
-
+#**************** END RUBY *****************************************************
 
 #****************        PYTHON     ********************************************* 
 ENV PATH="/usr/local/bin:$PATH" \
     GPG_KEY="0D96DF4D4110E5C43FBFB17F2D347EA6AA65421D" \
-    PYTHON_PIP_VERSION="18.1" \
+    PYTHON_PIP_VERSION="19.0.3" \
     LC_ALL=C.UTF-8 \
     LANG=C.UTF-8
 
@@ -230,7 +200,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 #****************      PHP     ****************************************************
  ENV GPG_KEYS CBAF69F173A0FEA4B537F470D66C9593118BCCB6 F38252826ACD957EF380D39F2F7956BC5DA04B5D
- ENV PHP_DOWNLOAD_SHA="cfe93e40be0350cd53c4a579f52fe5d8faf9c6db047f650a4566a2276bf33362" \
+ ENV PHP_DOWNLOAD_SHA="e1011838a46fd4a195c8453b333916622d7ff5bce4aca2d9d99afac142db2472" \
      PHPPATH="/php" \
      PHP_INI_DIR="/usr/local/etc/php" \
      PHP_CFLAGS="-fstack-protector -fpic -fpie -O2" \
@@ -252,7 +222,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
            || gpg --keyserver keyserver.pgp.com --recv-keys "$key" ); \
      done; \
      gpg --batch --verify php.tar.xz.asc php.tar.xz; \
-     rm -rf "$GNUPGHOME"; \ 
+     rm -rf "$GNUPGHOME"; \
      set -eux; \
      savedAptMark="$(apt-mark showmanual)"; \
      apt-get update; \
@@ -328,7 +298,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
  # Install Composer globally
  RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/bin --filename=composer
 #****************      END PHP     ****************************************************
- 
+
 #****************      NODEJS     ****************************************************
 
  ENV N_SRC_DIR="$SRC_DIR/n"
@@ -348,15 +318,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copy install tools
 COPY tools /opt/tools
 
-ENV JAVA_HOME="/usr/lib/jvm/java-8-openjdk-amd64" \
-    JDK_HOME="/usr/lib/jvm/java-8-openjdk-amd64" \
-    JRE_HOME="/usr/lib/jvm/java-8-openjdk-amd64/jre" \
+ENV JAVA_11_HOME="/opt/jvm/openjdk-11" \
+    JDK_11_HOME="/opt/jvm/openjdk-11" \
+    JRE_11_HOME="/opt/jvm/openjdk-11" \
+    JAVA_8_HOME="/usr/lib/jvm/java-8-openjdk-amd64" \
+    JDK_8_HOME="/usr/lib/jvm/java-8-openjdk-amd64" \
+    JRE_8_HOME="/usr/lib/jvm/java-8-openjdk-amd64/jre" \
     ANT_VERSION=1.10.5 \
     MAVEN_HOME="/opt/maven" \
     MAVEN_VERSION=3.6.0 \
     MAVEN_CONFIG="/root/.m2" \
-    INSTALLED_GRADLE_VERSIONS="4.10.2 5.2.1" \
-    GRADLE_VERSION=5.2.1 \
+    INSTALLED_GRADLE_VERSIONS="4.10.3 5.3" \
+    GRADLE_VERSION=5.3 \
     SBT_VERSION=1.2.8 \
     JDK_VERSION=11.0.2 \
     JDK_VERSION_TAG=9 \
@@ -369,10 +342,13 @@ ENV JAVA_HOME="/usr/lib/jvm/java-8-openjdk-amd64" \
     JDK_DOWNLOAD_SHA256="99be79935354f5c0df1ad293620ea36d13f48ec3ea870c838f20c504c9668b57" \
     ANT_DOWNLOAD_SHA512="acfa34c4f820d882f26ec67cf885d7dd484d534a7e99b33b05779e03da61849610328d2dbb4bfaa201e1ae75a0f0901e9c2bb793ed7bd76d3e4497e6ca5de371" \
     MAVEN_DOWNLOAD_SHA512="fae9c12b570c3ba18116a4e26ea524b29f7279c17cbaadc3326ca72927368924d9131d11b9e851b8dc9162228b6fdea955446be41207a5cfc61283dd8a561d2f" \
-    GRADLE_DOWNLOAD_SHA256="748c33ff8d216736723be4037085b8dc342c6a0f309081acf682c9803e407357" \
+    GRADLE_DOWNLOADS_SHA256="f4d820c2a9685710eba5b92f10e0e4fb20e0d6c0dd1f46971e658160f25e7147 5.3\n336b6898b491f6334502d8074a6b8c2d73ed83b92123106bd4bf837f04111043 4.10.3" \
     ANDROID_SDK_MANAGER_SHA256="92ffee5a1d98d856634e8b71132e8a95d96c83a63fde1099be3d86df3106def9"
 
-ENV JDK_DOWNLOAD_TAR="openjdk-${JDK_VERSION}_linux-x64_bin.tar.gz"
+ENV JDK_DOWNLOAD_TAR="openjdk-${JDK_VERSION}_linux-x64_bin.tar.gz" \
+    JAVA_HOME="$JAVA_11_HOME" \
+    JDK_HOME="$JDK_11_HOME" \
+    JRE_HOME="$JRE_11_HOME"
 
 ENV PATH="${PATH}:/opt/tools:${ANDROID_HOME}/tools:${ANDROID_HOME}/tools/bin:${ANDROID_HOME}/platform-tools"
 
@@ -398,10 +374,22 @@ RUN set -ex \
     && unzip /tmp/android-sdkmanager.zip -d ${ANDROID_HOME} \
     && chown -R root.root ${ANDROID_HOME} \
     && ln -s ${ANDROID_HOME}/tools/android /usr/bin/android \
-    # Install Android SDK
-    && android-accept-licenses.sh "sdkmanager --verbose platform-tools ${ANDROID_SDK_BUILD_TOOLS} ${ANDROID_SDK_PLATFORM_TOOLS} ${ANDROID_SDK_EXTRAS}" \
-    && android-accept-licenses.sh "sdkmanager --licenses" \
-    && apt-get install -y python-setuptools \     
+    # Install Android
+    && android-accept-licenses.sh "env JAVA_HOME=$JAVA_8_HOME JRE_HOME=$JRE_8_HOME JDK_HOME=$JDK_8_HOME sdkmanager --verbose platform-tools ${ANDROID_SDK_BUILD_TOOLS} ${ANDROID_SDK_PLATFORM_TOOLS} ${ANDROID_SDK_EXTRAS} ${ANDROID_SDK_NDK_TOOLS}" \
+    && android-accept-licenses.sh "env JAVA_HOME=$JAVA_8_HOME JRE_HOME=$JRE_8_HOME JDK_HOME=$JDK_8_HOME sdkmanager --licenses" \
+    && apt-get install -y python-setuptools \
+    # Install OpenJDK 11
+    # Note: We will use update-alternatives to make sure JDK11 has higher priority for all the tools
+    && mkdir -p $JAVA_HOME \
+    && curl -LSso /var/tmp/$JDK_DOWNLOAD_TAR https://download.java.net/java/GA/jdk$JAVA_VERSION/$JDK_VERSION_TAG/GPL/$JDK_DOWNLOAD_TAR \
+    && echo "$JDK_DOWNLOAD_SHA256 /var/tmp/$JDK_DOWNLOAD_TAR" | sha256sum -c - \
+    && tar xzvf /var/tmp/$JDK_DOWNLOAD_TAR -C $JAVA_HOME --strip-components=1 \
+    && for tool_path in $JAVA_HOME/bin/*; do \
+          tool=`basename $tool_path`; \
+          update-alternatives --install /usr/bin/$tool $tool $tool_path 10000; \
+          update-alternatives --set $tool $tool_path; \
+        done \
+     && rm $JAVA_HOME/lib/security/cacerts && ln -s /etc/ssl/certs/java/cacerts $JAVA_HOME/lib/security/cacerts \     
     # Install Ant
     && curl -LSso /var/tmp/apache-ant-$ANT_VERSION-bin.tar.gz https://archive.apache.org/dist/ant/binaries/apache-ant-$ANT_VERSION-bin.tar.gz  \
     && echo "$ANT_DOWNLOAD_SHA512 /var/tmp/apache-ant-$ANT_VERSION-bin.tar.gz" | sha512sum -c - \
@@ -419,6 +407,7 @@ RUN set -ex \
     && for version in $INSTALLED_GRADLE_VERSIONS; do { \
        wget "https://services.gradle.org/distributions/gradle-$version-all.zip" -O "$GRADLE_PATH/gradle-$version-all.zip" \
        && unzip "$GRADLE_PATH/gradle-$version-all.zip" -d /usr/local \
+       && echo "$GRADLE_DOWNLOADS_SHA256" | grep "$version" | sed "s|$version|$GRADLE_PATH/gradle-$version-all.zip|" | sha256sum -c - \
        && mkdir "/tmp/gradle-$version" \
        && "/usr/local/gradle-$version/bin/gradle" -p "/tmp/gradle-$version" wrapper \
        # Android Studio uses the "-all" distribution for it's wrapper script.
@@ -442,9 +431,9 @@ RUN set -ex \
 #****************     END JAVA     ****************************************************
 
 #****************     GO     **********************************************************
-ENV GOLANG_DOWNLOAD_SHA256="fb26c30e6a04ad937bbc657a1b5bba92f80096af1e8ee6da6430c045a8db3a5b" \
+ENV GOLANG_DOWNLOAD_SHA256="aea86e3c73495f205929cfebba0d63f1382c8ac59be081b6351681415f4063cf" \
     GOPATH="/go" \
-    DEP_VERSION="0.5.0" \
+    DEP_VERSION="0.5.1" \
     DEP_BINARY="dep-linux-amd64"
 
 RUN set -ex \
@@ -453,7 +442,7 @@ RUN set -ex \
     && apt-get update && apt-get install -y --no-install-recommends \
         pkg-config \
     && apt-get clean \
-    && wget "https://storage.googleapis.com/golang/go$GOLANG_VERSION.linux-amd64.tar.gz" -O /tmp/golang.tar.gz \
+    && wget "https://dl.google.com/go/go$GOLANG_VERSION.linux-amd64.tar.gz" -O /tmp/golang.tar.gz \
     && echo "$GOLANG_DOWNLOAD_SHA256 /tmp/golang.tar.gz" | sha256sum -c - \
     && tar -xzf /tmp/golang.tar.gz -C /usr/local \
     && rm -fr /var/lib/apt/lists/* /tmp/* /var/tmp/* \
@@ -480,7 +469,7 @@ RUN set -ex \
 
 # Install .NET Core SDK
 ENV DOTNET_SDK_DOWNLOAD_URL https://dotnetcli.blob.core.windows.net/dotnet/Sdk/$DOTNET_SDK_VERSION/dotnet-sdk-$DOTNET_SDK_VERSION-linux-x64.tar.gz
-ENV DOTNET_SDK_DOWNLOAD_SHA d7ed76a0efe2b07ac0bb3af611072b3b99f646200759cb5905a7944b1687f34d42b4b74a3a5c77dbe251f769c6c3878fc30a8d0f8f44e44bf4c7116699f3f948
+ENV DOTNET_SDK_DOWNLOAD_SHA 8DA955FA0AEEBB6513A6E8C4C23472286ED78BD5533AF37D79A4F2C42060E736FDA5FD48B61BF5AEC10BBA96EB2610FACC0F8A458823D374E1D437B26BA61A5C
 
 RUN set -ex \
     && curl -SL $DOTNET_SDK_DOWNLOAD_URL --output dotnet.tar.gz \
@@ -505,9 +494,9 @@ RUN set -ex \
 
 # Install Powershell Core
 # See instructions at https://docs.microsoft.com/en-us/powershell/scripting/setup/installing-powershell-core-on-linux
-ENV POWERSHELL_VERSION 6.1.1
+ENV POWERSHELL_VERSION 6.1.3
 ENV POWERSHELL_DOWNLOAD_URL https://github.com/PowerShell/PowerShell/releases/download/v$POWERSHELL_VERSION/powershell-$POWERSHELL_VERSION-linux-x64.tar.gz
-ENV POWERSHELL_DOWNLOAD_SHA 822CB473A5B3D076584181BB5D308035A9FBD079A68762E9E6C0D7543E05B513
+ENV POWERSHELL_DOWNLOAD_SHA E728B51487288FB395C2BA41CE978DE265049C5BD995AFF0B06F1573DB831C8B
 
 RUN set -ex \
     && curl -SL $POWERSHELL_DOWNLOAD_URL --output powershell.tar.gz \
@@ -537,3 +526,16 @@ RUN set -ex \
     && rm -rf /tmp/google-chrome-stable_current_amd64.deb \
     && sed -i 's|HERE/chrome"|HERE/chrome" --disable-setuid-sandbox --no-sandbox|g' "/opt/google/chrome/google-chrome" \
     && google-chrome --version
+
+# Install ChromeDriver
+
+RUN set -ex \
+    && CHROME_VERSION=`google-chrome --version | awk -F '[ .]' '{print $3"."$4"."$5}'` \
+    && CHROME_DRIVER_VERSION=`wget -qO- chromedriver.storage.googleapis.com/LATEST_RELEASE_$CHROME_VERSION` \
+    && wget --no-verbose -O /tmp/chromedriver_linux64.zip https://chromedriver.storage.googleapis.com/$CHROME_DRIVER_VERSION/chromedriver_linux64.zip \
+    && unzip /tmp/chromedriver_linux64.zip -d /opt \
+    && rm /tmp/chromedriver_linux64.zip \
+    && mv /opt/chromedriver /opt/chromedriver-$CHROME_DRIVER_VERSION \
+    && chmod 755 /opt/chromedriver-$CHROME_DRIVER_VERSION \
+    && ln -s /opt/chromedriver-$CHROME_DRIVER_VERSION /usr/bin/chromedriver \
+    && chromedriver --version
