@@ -101,40 +101,120 @@ VOLUME /var/lib/docker
 
 COPY dockerd-entrypoint.sh /usr/local/bin/
 
-ENV NODE_VERSION="8.11.0"
+ENV GPG_KEYS 0BD78B5F97500D450838F95DFE857D9A90D90EC1 6E4F6AB321FDC07F2C332E3AC2BF0BC433CFC8B3
+ENV SRC_DIR="/usr/src" \
+    PHP_VERSION=5.6.33 \
+    PHP_DOWNLOAD_SHA="9004995fdf55f111cd9020e8b8aff975df3d8d4191776c601a46988c375f3553" \
+    PHPPATH="/php" \
+    PHP_INI_DIR="/usr/local/etc/php" \
+    PHP_CFLAGS="-fstack-protector -fpic -fpie -O2" \
+    PHP_LDFLAGS="-Wl,-O1 -Wl,--hash-style=both -pie" \
+    COMPOSER_VERSION=1.6.3 \
+    COMPOSER_DOWNLOAD_SHA="52cb7bbbaee720471e3b34c8ae6db53a38f0b759c06078a80080db739e4dcab6"
 
-# gpg keys listed at https://github.com/nodejs/node#release-team
-RUN set -ex \
-    && for key in \
-      94AE36675C464D64BAFA68DD7434390BDBE9B9C5 \
-      B9AE9905FFD7803F25714661B63B535A4C206CA9 \
-      77984A986EBC2AA786BC0F66B01FBB92821C587A \
-      56730D5401028683275BD23C23EFEFE93C4CFFFE \
-      71DCFD284A79C3B38668286BC97EC7A07EDE3FC1 \
-      FD3A5288F042B6850C66B31F09FE44734EB7990E \
-      8FCCA13FEF1D0C2E91008E09770F7A9A5AE15600 \
-      C4F0DFFF4E8C1A8236409D08E73BC641CC11F4C8 \
-      DD8F2338BAE7501E3DD5AC78C273792F7D83545D \
-      9554F04D7259F04124DE6B476D5A82AC7E37093B \
-      93C7E9E91B49E432C2F75674B0A78B0A6C481CF6 \
-      114F43EE0176B71C7BC219DD50A3051F888C628D \
-      7937DFD2AB06298B2293C3187D33FF9D0246406D \
-    ; do \
-      gpg --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys "$key" || \
-      gpg --keyserver hkp://ipv4.pool.sks-keyservers.net --recv-keys "$key" || \
-      gpg --keyserver hkp://pgp.mit.edu:80 --recv-keys "$key" ; \
-    done
+ENV PHP_SRC_DIR="$SRC_DIR/php" \
+    PHP_CPPFLAGS="$PHP_CFLAGS" \
+    PHP_URL="https://secure.php.net/get/php-$PHP_VERSION.tar.xz/from/this/mirror" \
+    PHP_ASC_URL="https://secure.php.net/get/php-$PHP_VERSION.tar.xz.asc/from/this/mirror" \
+    COMPOSER_URL="https://getcomposer.org/download/$COMPOSER_VERSION/composer.phar"
 
-RUN set -ex \
-	&& wget "https://nodejs.org/download/release/v$NODE_VERSION/node-v$NODE_VERSION-linux-x64.tar.gz" -O node-v$NODE_VERSION-linux-x64.tar.gz \
-	&& wget "https://nodejs.org/download/release/v$NODE_VERSION/SHASUMS256.txt.asc" -O SHASUMS256.txt.asc \
-	&& gpg --batch --decrypt --output SHASUMS256.txt SHASUMS256.txt.asc \
-	&& grep " node-v$NODE_VERSION-linux-x64.tar.gz\$" SHASUMS256.txt | sha256sum -c - \
-		&& tar -xzf "node-v$NODE_VERSION-linux-x64.tar.gz" -C /usr/local --strip-components=1 \
-		&& rm "node-v$NODE_VERSION-linux-x64.tar.gz" SHASUMS256.txt.asc SHASUMS256.txt \
-		&& ln -s /usr/local/bin/node /usr/local/bin/nodejs \
-		&& rm -fr /var/lib/apt/lists/* /tmp/* /var/tmp/*
+# Install PHP
+RUN set -xe; \
+    mkdir -p $SRC_DIR; \
+    cd $SRC_DIR; \
+    wget -O php.tar.xz "$PHP_URL"; \
+    echo "$PHP_DOWNLOAD_SHA *php.tar.xz" | sha256sum -c -; \
+    wget -O php.tar.xz.asc "$PHP_ASC_URL"; \
+    export GNUPGHOME="$(mktemp -d)"; \
+    for key in $GPG_KEYS; do \
+        ( gpg --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys "$key" \
+          || gpg --keyserver pgp.mit.edu --recv-keys "$key" \
+          || gpg --keyserver keyserver.pgp.com --recv-keys "$key" ); \
+    done; \
+    gpg --batch --verify php.tar.xz.asc php.tar.xz; \
+    rm -rf "$GNUPGHOME"; \
 
-RUN npm set unsafe-perm true
+    set -eux; \
+    savedAptMark="$(apt-mark showmanual)"; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends libedit-dev=3.1-* dpkg-dev=1.17.*; \
+    rm -rf /var/lib/apt/lists/*; \
+    apt-get clean; \
 
-CMD [ "node" ]
+    export \
+        CFLAGS="$PHP_CFLAGS" \
+        CPPFLAGS="$PHP_CPPFLAGS" \
+        LDFLAGS="$PHP_LDFLAGS" \
+    ; \
+    mkdir -p $PHP_SRC_DIR; \
+    tar -Jxf $SRC_DIR/php.tar.xz -C $PHP_SRC_DIR --strip-components=1; \
+    cd $SRC_DIR/php; \
+    gnuArch="$(dpkg-architecture -qDEB_BUILD_GNU_TYPE)"; \
+    debMultiarch="$(dpkg-architecture -qDEB_BUILD_MULTIARCH)"; \
+
+    # https://bugs.php.net/bug.php?id=74125
+    if [ ! -d /usr/include/curl ]; then \
+        ln -sT "/usr/include/$debMultiarch/curl" /usr/local/include/curl; \
+    fi; \
+    ./configure \
+        --build="$gnuArch" \
+        --with-config-file-path="$PHP_INI_DIR" \
+        --with-config-file-scan-dir="$PHP_INI_DIR/conf.d" \
+        --disable-cgi \
+    # --enable-ftp is included here because ftp_ssl_connect() needs ftp to be compiled statically (see https://github.com/docker-library/php/issues/236)
+        --enable-ftp \
+    # --enable-mbstring is included here because otherwise there's no way to get pecl to use it properly (see https://github.com/docker-library/php/issues/195)
+        --enable-mbstring \
+    # --enable-mysqlnd is included here because it's harder to compile after the fact than extensions are (since it's a plugin for several extensions, not an extension in itself)
+        --enable-mysqlnd \
+        --with-curl \
+        --with-libedit \
+        --with-openssl \
+        --with-zlib \
+    # bundled pcre does not support JIT on s390x
+
+    # https://manpages.debian.org/stretch/libpcre3-dev/pcrejit.3.en.html#AVAILABILITY_OF_JIT_SUPPORT
+    $(test "$gnuArch" = 's390x-linux-gnu' && echo '--without-pcre-jit') \
+        --with-libdir="lib/$debMultiarch" \
+    ${PHP_EXTRA_CONFIGURE_ARGS:-} \
+    ; \
+    make -j "$(nproc)"; \
+    make test; \
+    make install; \
+    find /usr/local/bin /usr/local/sbin -type f -executable -exec strip --strip-all '{}' + || true; \
+    make clean; \
+    cd /; \
+    rm -rf $PHP_SRC_DIR; \
+
+    # reset apt-mark's "manual" list so that "purge --auto-remove" will remove all build dependencies
+    apt-mark auto '.*' > /dev/null; \
+    [ -z "$savedAptMark" ] || apt-mark manual $savedAptMark; \
+    find /usr/local -type f -executable -exec ldd '{}' ';' \
+        | awk '/=>/ { print $(NF-1) }' \
+        | sort -u \
+        | xargs -r dpkg-query --search \
+        | cut -d: -f1 \
+        | sort -u \
+        | xargs -r apt-mark manual \
+    ; \
+    apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
+    php --version; \
+    pecl update-channels; \
+    rm -rf /tmp/pear ~/.pearrc; \
+
+    # Increase the memory size, default is 128M
+    mkdir "$PHP_INI_DIR"; \
+    mkdir "$PHP_INI_DIR/conf.d"; \
+    touch "$PHP_INI_DIR/conf.d/memory.ini" \
+    && echo "memory_limit = 1G;" >> "$PHP_INI_DIR/conf.d/memory.ini";
+
+ENV PATH="$PHPPATH/bin:/usr/local/php/bin:$PATH"
+
+# Install Composer globally
+RUN set -xe; \
+    wget $COMPOSER_URL; \
+    echo "$COMPOSER_DOWNLOAD_SHA *composer.phar" | sha256sum -c -; \
+    mv ./composer.phar /usr/local/bin/composer; \
+    chmod +x /usr/local/bin/composer;
+
+WORKDIR $PHPPATH
