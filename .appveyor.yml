@@ -19,7 +19,7 @@ init:
 - git config --global core.safecrlf false
 
 install:
-    
+
 build_script:
 - ps: |
     git clone -q https://github.com/aws/aws-codebuild-docker-images/
@@ -44,6 +44,7 @@ build_script:
         git checkout -q .
         git clean -q -fdx
         git checkout -q -b $tag
+        git checkout -q .
         git pull -q origin $tag
         Write-Host ($directory)
         Write-Host ($tag)
@@ -55,7 +56,7 @@ build_script:
         Remove-Item -Force
 
         Copy-item -Force -Recurse -Verbose ($directory + "\*") -Destination .
-        
+
         git add -A
         git commit -am ($tag + "[skip appveyor]")
         Write-Host ("Pushing " + $tag)
