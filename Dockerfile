@@ -101,35 +101,47 @@ VOLUME /var/lib/docker
 
 COPY dockerd-entrypoint.sh /usr/local/bin/
 
-ENV JAVA_VERSION=8 \
-    JAVA_HOME="/usr/lib/jvm/java-8-openjdk-amd64" \
-    JDK_HOME="/usr/lib/jvm/java-8-openjdk-amd64" \
-    JRE_HOME="/usr/lib/jvm/java-8-openjdk-amd64" \
+ENV JAVA_VERSION=9 \
+    JAVA_HOME="/opt/jvm/openjdk-9" \
+    JDK_HOME="/opt/jvm/openjdk-9" \
+    JRE_HOME="/opt/jvm/openjdk-9" \
     ANT_VERSION=1.10.3 \
     MAVEN_HOME="/opt/maven" \
     MAVEN_VERSION=3.5.4 \
     MAVEN_CONFIG="/root/.m2" \
     GRADLE_VERSION=4.2.1 \
+    SBT_VERSION=1.2.3 \
     PROPERTIES_COMMON_VERSION=0.92.37.8 \
     PYTHON_TOOL_VERSION="3.3-*" \
-    JDK_VERSION="8u171-b11-2~14.04" \
+    JDK_VERSION=9.0.4 \
+    JDK_DOWNLOAD_SHA256="39362fb9bfb341fcc802e55e8ea59f4664ca58fd821ce956d48e1aa4fb3d2dec" \
     ANT_DOWNLOAD_SHA512="73f2193700b1d1e32eedf25fab1009e2a98fb2f6425413f5c9fa1b0f2f9f49f59cb8ed3f04931c808ae022a64ecfa2619e5fb77643fea6dbc29721e489eb3a07" \
     MAVEN_DOWNLOAD_SHA1="22cac91b3557586bb1eba326f2f7727543ff15e3" \
     GRADLE_DOWNLOAD_SHA256="b551cc04f2ca51c78dd14edb060621f0e5439bdfafa6fd167032a09ac708fbc0"
 
+ENV JDK_DOWNLOAD_TAR="openjdk-${JDK_VERSION}_linux-x64_bin.tar.gz"
+
 RUN set -ex \
     && apt-get update \
     && apt-get install -y software-properties-common=$PROPERTIES_COMMON_VERSION \
-    && add-apt-repository ppa:openjdk-r/ppa \
-    && apt-get update \
     && apt-get install -y python-setuptools=$PYTHON_TOOL_VERSION \
 
-    # Install OpenJDK 8
-    && apt-get install -y openjdk-${JAVA_VERSION}-jdk=$JDK_VERSION \
+    # Install OpenJDK 9
+    # Note: Installing ca-certificates-java installs JDK7 because it's a depedency.
+    # We will use update-alternatives to make sure JDK9 has higher priority for all
+    # the tools
     && apt-get install -y --no-install-recommends ca-certificates-java \
-    && apt-get clean \
-    # Ensure Java cacerts symlink points to valid location
-    && update-ca-certificates -f \
+
+    && mkdir -p $JAVA_HOME \
+    && curl -LSso /var/tmp/$JDK_DOWNLOAD_TAR https://download.java.net/java/GA/jdk9/$JDK_VERSION/binaries/$JDK_DOWNLOAD_TAR \
+    && echo "$JDK_DOWNLOAD_SHA256 /var/tmp/$JDK_DOWNLOAD_TAR" | tee foo.txt | sha256sum -c - \
+    && tar xzvf /var/tmp/$JDK_DOWNLOAD_TAR -C $JAVA_HOME --strip-components=1 \
+    && for tool_path in $JAVA_HOME/bin/*; do \
+          tool=`basename $tool_path`; \
+          update-alternatives --install /usr/bin/$tool $tool $tool_path 10000; \
+          update-alternatives --set $tool $tool_path; \
+        done \
+     && rm $JAVA_HOME/lib/security/cacerts && ln -s /etc/ssl/certs/java/cacerts $JAVA_HOME/lib/security/cacerts \
 
     # Install Ant
     && curl -LSso /var/tmp/apache-ant-$ANT_VERSION-bin.tar.gz https://archive.apache.org/dist/ant/binaries/apache-ant-$ANT_VERSION-bin.tar.gz  \
@@ -150,6 +162,13 @@ RUN set -ex \
     && echo "$GRADLE_DOWNLOAD_SHA256 /var/tmp/gradle-$GRADLE_VERSION-bin.zip" | sha256sum -c - \
     && unzip /var/tmp/gradle-$GRADLE_VERSION-bin.zip -d /opt \
     && update-alternatives --install /usr/local/bin/gradle gradle /opt/gradle-$GRADLE_VERSION/bin/gradle 10000 \
+
+    # Install SBT
+    && echo "deb https://dl.bintray.com/sbt/debian /" | tee -a /etc/apt/sources.list.d/sbt.list \
+    && apt-get install -y --no-install-recommends apt-transport-https \
+    && apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 2EE0EA64E40A89B84B2DF73499E82A75642AC823 \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends sbt=$SBT_VERSION \
 
     # Cleanup
     && rm -fr /var/lib/apt/lists/* /tmp/* /var/tmp/* \
