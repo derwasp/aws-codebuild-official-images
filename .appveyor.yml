@@ -44,14 +44,15 @@ build_script:
         git checkout .
         git clean -fdx
         git checkout -b $tag
-        # git pull origin $tag
+        git pull origin $tag
         Write-Host ($directory)
         Write-Host ($tag)
 
-        Get-ChildItem -Path  . -Recurse |
+        Get-ChildItem -Force -Path . -Recurse |
         Select -ExpandProperty FullName |
-        sort length -Descending |
-        Remove-Item -Force 
+        Where {$_ -notlike '*\.git*'} |
+        Sort length -Descending |
+        Remove-Item -Force
 
         Copy-item -Force -Recurse -Verbose ($directory + "\*") -Destination .
         
