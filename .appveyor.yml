@@ -37,7 +37,6 @@ build_script:
     Write-Host ("Cloning the temporary repo..")
     git clone -q https://github.com/derwasp/aws-codebuild-official-images tmp
 
-
     pushd tmp
 
     foreach ($directory in $dockerDirectories) {
@@ -45,14 +44,25 @@ build_script:
         $image = [System.IO.Path]::GetFileName([System.IO.Path]::GetDirectoryName($directory))
         $tag = $image + "-" + $version
 
+        Write-Host ("Tag " + $tag + " in " + $directory)
+
+        Write-Host ("git checkout -q master")
         git checkout -q master
+
+        Write-Host ("git checkout -q .")
         git checkout -q .
+
+        Write-Host ("git clean -q -fdx")
         git clean -q -fdx
+
+        Write-Host ("git checkout -q -b $tag")
         git checkout -q -b $tag
+
+        Write-Host ("git checkout -q .")
         git checkout -q .
+
+        Write-Host ("git pull -q origin $tag")
         git pull -q origin $tag
-        Write-Host ($directory)
-        Write-Host ($tag)
 
         Get-ChildItem -Force -Path . -Recurse |
         Select -ExpandProperty FullName |
