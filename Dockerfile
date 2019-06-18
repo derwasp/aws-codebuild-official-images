@@ -104,26 +104,64 @@ COPY dockerd-entrypoint.sh /usr/local/bin/
 # Copy install tools
 COPY tools /opt/tools
 
-ENV ANDROID_HOME="/usr/local/android-sdk-linux" \
+ENV NODE_VERSION="8.11.0" \
+    ANDROID_HOME="/usr/local/android-sdk-linux" \
     JAVA_HOME="/usr/lib/jvm/java-8-openjdk-amd64" \
+    JAVA_VERSION="8" \
     JDK_VERSION="8u171-b11-2~14.04" \
     JDK_HOME="/usr/lib/jvm/java-8-openjdk-amd64" \
     JRE_HOME="/usr/lib/jvm/java-8-openjdk-amd64/jre" \
-    JAVA_VERSION="8" \
-    INSTALLED_GRADLE_VERSIONS="2.14.1 3.5 4.0.2 4.1 4.2.1 4.3.1 4.4" \
-    GRADLE_VERSION="4.4" \
-    ANDROID_TOOLS_VER="24.4.1" \
-    ANDROID_TOOLS_SHA1="725bb360f0f7d04eaccff5a2d57abdd49061326d"
-ENV PATH="${PATH}:/opt/tools:${ANDROID_HOME}/tools:${ANDROID_HOME}/platform-tools"
+    INSTALLED_GRADLE_VERSIONS="2.14.1 3.5 4.0.2 4.1 4.2.1 4.3.1 4.4 4.6" \
+    GRADLE_VERSION="4.6" \
+    # Android SDK manager for 26.1.1
+    ANDROID_SDK_MANAGER_VER="3859397" \
+    ANDROID_SDK_MANAGER_SHA256="444e22ce8ca0f67353bda4b85175ed3731cae3ffa695ca18119cbacef1c1bea0" \
+    ANDROID_SDK_BUILD_TOOLS="build-tools;19.1.0 build-tools;20.0.0 build-tools;21.1.2 build-tools;22.0.1 build-tools;23.0.3 build-tools;24.0.3 build-tools;25.0.3 build-tools;26.0.3 build-tools;27.0.3" \
+    ANDROID_SDK_PLATFORM_TOOLS="platforms;android-19 platforms;android-20 platforms;android-21 platforms;android-22 platforms;android-23 platforms;android-24 platforms;android-25 platforms;android-26 platforms;android-27" \
+    ANDROID_SDK_EXTRAS="extras;android;m2repository extras;google;m2repository extras;google;google_play_services"
+ENV PATH="${PATH}:/opt/tools:${ANDROID_HOME}/tools:${ANDROID_HOME}/tools/bin:${ANDROID_HOME}/platform-tools"
+
+# gpg keys listed at https://github.com/nodejs/node#release-team
+RUN set -ex \
+    && for key in \
+      94AE36675C464D64BAFA68DD7434390BDBE9B9C5 \
+      B9AE9905FFD7803F25714661B63B535A4C206CA9 \
+      77984A986EBC2AA786BC0F66B01FBB92821C587A \
+      56730D5401028683275BD23C23EFEFE93C4CFFFE \
+      71DCFD284A79C3B38668286BC97EC7A07EDE3FC1 \
+      FD3A5288F042B6850C66B31F09FE44734EB7990E \
+      8FCCA13FEF1D0C2E91008E09770F7A9A5AE15600 \
+      C4F0DFFF4E8C1A8236409D08E73BC641CC11F4C8 \
+      DD8F2338BAE7501E3DD5AC78C273792F7D83545D \
+      9554F04D7259F04124DE6B476D5A82AC7E37093B \
+      93C7E9E91B49E432C2F75674B0A78B0A6C481CF6 \
+      114F43EE0176B71C7BC219DD50A3051F888C628D \
+      7937DFD2AB06298B2293C3187D33FF9D0246406D \
+    ; do \
+      gpg --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys "$key" || \
+      gpg --keyserver hkp://ipv4.pool.sks-keyservers.net --recv-keys "$key" || \
+      gpg --keyserver hkp://pgp.mit.edu:80 --recv-keys "$key" ; \
+    done
+
+# Install nodejs
+RUN set -ex \
+	&& wget "https://nodejs.org/download/release/v$NODE_VERSION/node-v$NODE_VERSION-linux-x64.tar.gz" -O node-v$NODE_VERSION-linux-x64.tar.gz \
+	&& wget "https://nodejs.org/download/release/v$NODE_VERSION/SHASUMS256.txt.asc" -O SHASUMS256.txt.asc \
+	&& gpg --batch --decrypt --output SHASUMS256.txt SHASUMS256.txt.asc \
+	&& grep " node-v$NODE_VERSION-linux-x64.tar.gz\$" SHASUMS256.txt | sha256sum -c - \
+		&& tar -xzf "node-v$NODE_VERSION-linux-x64.tar.gz" -C /usr/local --strip-components=1 \
+		&& rm "node-v$NODE_VERSION-linux-x64.tar.gz" SHASUMS256.txt.asc SHASUMS256.txt \
+		&& ln -s /usr/local/bin/node /usr/local/bin/nodejs \
+		&& rm -fr /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Install java8
 RUN set -ex \
       && apt-get update \
       && apt-get install -y software-properties-common=0.92.37.8 \
       && add-apt-repository -y ppa:openjdk-r/ppa \
-      && (echo oracle-java$JAVA_VERSION-installer shared/accepted-oracle-license-v1-1 select true | /usr/bin/debconf-set-selections) \
+      && (echo oracle-java${JAVA_VERSION}-installer shared/accepted-oracle-license-v1-1 select true | /usr/bin/debconf-set-selections) \
       && apt-get update \
-      && apt-get -y install openjdk-$JAVA_VERSION-jdk=$JDK_VERSION \
+      && apt-get -y install openjdk-${JAVA_VERSION}-jdk=${JDK_VERSION} \
       && update-ca-certificates -f \
       && apt-get install -y -qq less=458-* groff=1.22.2-* \
       && dpkg --add-architecture i386 \
@@ -133,7 +171,7 @@ RUN set -ex \
       && apt-get clean \
 # Precache most relevant versions of Gradle for `gradlew` scripts
       && mkdir -p /usr/src/gradle \
-      && for version in $INSTALLED_GRADLE_VERSIONS; do {\
+      && for version in $INSTALLED_GRADLE_VERSIONS; do { \
            wget "https://services.gradle.org/distributions/gradle-$version-all.zip" -O "/usr/src/gradle/gradle-$version-all.zip" \
            && unzip "/usr/src/gradle/gradle-$version-all.zip" -d /usr/local \
            && mkdir "/tmp/gradle-$version" \
@@ -147,11 +185,14 @@ RUN set -ex \
 # Install default GRADLE_VERSION to path
       && ln -s /usr/local/gradle-$GRADLE_VERSION/bin/gradle /usr/bin/gradle \
       && rm -rf /usr/src/gradle \
+# Install Android SDK manager
+      && wget "https://dl.google.com/android/repository/sdk-tools-linux-${ANDROID_SDK_MANAGER_VER}.zip" -O /tmp/android-sdkmanager.zip \
+      && echo "${ANDROID_SDK_MANAGER_SHA256} /tmp/android-sdkmanager.zip" | sha256sum -c - \
+      && mkdir -p ${ANDROID_HOME} \
+      && unzip /tmp/android-sdkmanager.zip -d ${ANDROID_HOME} \
+      && chown -R root.root ${ANDROID_HOME} \
+      && ln -s ${ANDROID_HOME}/tools/android /usr/bin/android \
 # Install Android SDK
-      && wget "https://dl.google.com/android/android-sdk_r$ANDROID_TOOLS_VER-linux.tgz" -O /tmp/android-sdk.tgz \
-      && echo "${ANDROID_TOOLS_SHA1} /tmp/android-sdk.tgz" | sha1sum -c - \
-      && tar -xzf /tmp/android-sdk.tgz -C /usr/local/ \
-      && chown -R root.root $ANDROID_HOME \
-      && ln -s $ANDROID_HOME/tools/android /usr/bin/android \
-      && /opt/tools/android-accept-licenses.sh "android update sdk --all --no-ui --filter platform-tools,build-tools-23.0.3,build-tools-24.0.3,build-tools-25.0.3,build-tools-26.0.2,android-23,android-24,android-25,android-26" \
+      && android-accept-licenses.sh "sdkmanager --verbose platform-tools ${ANDROID_SDK_BUILD_TOOLS} ${ANDROID_SDK_PLATFORM_TOOLS} ${ANDROID_SDK_EXTRAS}" \
+      && android-accept-licenses.sh "sdkmanager --licenses" \
       && rm -fr /var/lib/apt/lists/* /tmp/* /var/tmp/*
