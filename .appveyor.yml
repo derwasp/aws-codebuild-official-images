@@ -40,6 +40,9 @@ build_script:
         $image = [System.IO.Path]::GetFileName([System.IO.Path]::GetDirectoryName($directory))
         $tag = $image + "-" + $version
 
+        git checkout master
+        git checkout .
+        git clean -fdx
         git checkout -b $tag
         Write-Host ($directory)
         Write-Host ($tag)
