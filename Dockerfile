@@ -96,13 +96,14 @@ VOLUME /var/lib/docker
 COPY dockerd-entrypoint.sh /usr/local/bin/
 
 ENV PATH="/usr/local/bin:$PATH" \
-    GPG_KEY="97FC712E4C024BBEA48A61ED3A5CA953F73C700D" \
-    PYTHON_VERSION="3.5.2" \
-    PYTHON_PIP_VERSION="8.1.2"
+    GPG_KEY="0D96DF4D4110E5C43FBFB17F2D347EA6AA65421D" \
+    PYTHON_VERSION="3.6.5" \
+    PYTHON_PIP_VERSION="10.0.0" \
+    LC_ALL=C.UTF-8 \
+    LANG=C.UTF-8
 
-RUN set -ex \
-    && apt-get update \
-    && apt-get install -y --no-install-recommends tcl-dev tk-dev \
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        tcl-dev tk-dev \
     && rm -rf /var/lib/apt/lists/* \
     \
     && wget -O python.tar.xz "https://www.python.org/ftp/python/${PYTHON_VERSION%%[a-z]*}/Python-$PYTHON_VERSION.tar.xz" \
@@ -135,7 +136,7 @@ RUN set -ex \
 # ("Requirement already up-to-date: pip==8.1.2 in /usr/local/lib/python3.6/site-packages")
 # https://github.com/docker-library/python/pull/143#issuecomment-241032683
 	&& pip3 install --no-cache-dir --upgrade --force-reinstall "pip==$PYTHON_PIP_VERSION" \
-        && pip install awscli==1.* --no-cache-dir \
+        && pip install awscli==1.* boto3 pipenv virtualenv --no-cache-dir \
 # then we use "pip list" to ensure we don't have more than one pip version installed
 # https://github.com/docker-library/python/pull/100
 	&& [ "$(pip list |tac|tac| awk -F '[ ()]+' '$1 == "pip" { print $2; exit }')" = "$PYTHON_PIP_VERSION" ] \
