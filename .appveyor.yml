@@ -72,7 +72,7 @@ build_script:
         git add -A
         git commit -am ($tag + "[skip appveyor]")
         Write-Host ("Pushing " + $tag)
-        git push origin $tag
+        git push -q origin $tag
     }
 
     popd
