@@ -1,10 +1,11 @@
 <settings>
+  <activeProfiles>
+    <!--make the profile active all the time -->
+    <activeProfile>securecentral</activeProfile>
+  </activeProfiles>
   <profiles>
     <profile>
       <id>securecentral</id>
-      <activation>
-        <activeByDefault>true</activeByDefault>
-      </activation>
       <!--Override the repository (and pluginRepository) "central" from the
          Maven Super POM -->
       <repositories>
