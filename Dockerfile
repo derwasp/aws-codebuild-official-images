@@ -101,11 +101,11 @@ VOLUME /var/lib/docker
 
 COPY dockerd-entrypoint.sh /usr/local/bin/
 
-ENV RUBY_MAJOR="2.2" \
-    RUBY_VERSION="2.2.5" \
-    RUBY_DOWNLOAD_SHA256="30c4b31697a4ca4ea0c8db8ad30cf45e6690a0f09687e5d483c933c03ca335e3" \
-    RUBYGEMS_VERSION="2.6.7" \
-	BUNDLER_VERSION="1.13.5" \
+ENV RUBY_MAJOR="2.5" \
+    RUBY_VERSION="2.5.1" \
+    RUBY_DOWNLOAD_SHA256="dac81822325b79c3ba9532b048c2123357d3310b2b40024202f360251d9829b1" \
+    RUBYGEMS_VERSION="2.7.2" \
+    BUNDLER_VERSION="1.16.1" \
     GEM_HOME="/usr/local/bundle"
 
 ENV BUNDLE_PATH="$GEM_HOME" \
@@ -115,8 +115,7 @@ ENV BUNDLE_PATH="$GEM_HOME" \
 
 ENV PATH $BUNDLE_BIN:$PATH
 
-RUN set -ex \
-	&& mkdir -p /usr/local/etc \
+RUN mkdir -p /usr/local/etc \
 	&& { \
         echo 'install: --no-document'; \
         echo 'update: --no-document'; \
