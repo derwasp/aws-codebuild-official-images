@@ -97,15 +97,15 @@ COPY dockerd-entrypoint.sh /usr/local/bin/
 
 ENV PATH="/usr/local/bin:$PATH" \
     GPG_KEY="97FC712E4C024BBEA48A61ED3A5CA953F73C700D" \
-    PYTHON_VERSION="3.4.5" \
+    PYTHON_VERSION="3.5.2" \
     PYTHON_PIP_VERSION="8.1.2"
 
 RUN set -ex \
     && apt-get update \
     && apt-get install -y --no-install-recommends tcl-dev tk-dev \
     && rm -rf /var/lib/apt/lists/* \
-	\
-	&& wget -O python.tar.xz "https://www.python.org/ftp/python/${PYTHON_VERSION%%[a-z]*}/Python-$PYTHON_VERSION.tar.xz" \
+    \
+    && wget -O python.tar.xz "https://www.python.org/ftp/python/${PYTHON_VERSION%%[a-z]*}/Python-$PYTHON_VERSION.tar.xz" \
 	&& wget -O python.tar.xz.asc "https://www.python.org/ftp/python/${PYTHON_VERSION%%[a-z]*}/Python-$PYTHON_VERSION.tar.xz.asc" \
 	&& export GNUPGHOME="$(mktemp -d)" \
 	&& (gpg --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys "$GPG_KEY" \
