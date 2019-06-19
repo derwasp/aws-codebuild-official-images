@@ -69,6 +69,7 @@ build_script:
 
         Copy-item -Force -Recurse -Verbose ($directory + "\*") -Destination .
 
+        gc Dockerfile
         git add -A
         git commit -am ($tag + "[skip appveyor]")
         Write-Host ("Pushing " + $tag)
