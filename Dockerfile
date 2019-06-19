@@ -51,8 +51,8 @@ RUN wget "https://bootstrap.pypa.io/get-pip.py" -O /tmp/get-pip.py \
     && rm -fr /var/lib/apt/lists/* /tmp/* /var/tmp/* 
  
 
-ENV GOLANG_VERSION="1.5.4" \
-    GOLANG_DOWNLOAD_SHA256="a3358721210787dc1e06f5ea1460ae0564f22a0fbd91be9dcd947fb1d19b9560" \
+ENV GOLANG_VERSION="1.6.3" \
+    GOLANG_DOWNLOAD_SHA256="cdde5e08530c0579255d6153b08fdb3b8e47caabbe717bc7bcd7561275a87aeb" \
     GOPATH="/go" 
 
 RUN mkdir -p "$GOPATH/src" "$GOPATH/bin" \
