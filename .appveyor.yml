@@ -64,12 +64,15 @@ build_script:
         Get-ChildItem -Force -Path . -Recurse |
         Select -ExpandProperty FullName |
         Where {$_ -notlike '*\.git*'} |
-        Sort length -Descending |
         Remove-Item -Force
 
         Copy-item -Force -Recurse -Verbose ($directory + "\*") -Destination .
 
-        gc Dockerfile
+        Get-ChildItem -Force -Path . -Recurse |
+        Select -ExpandProperty FullName |
+        Where {$_ -notlike '*\.git*'} |
+        %{$_.LastWriteTime = (Get-Date)}
+        
         git add -A
         git commit -am ($tag + "[skip appveyor]")
         Write-Host ("Pushing " + $tag)
