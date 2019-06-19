@@ -71,7 +71,10 @@ build_script:
         Get-ChildItem -Force -Path . -Recurse |
         Select -ExpandProperty FullName |
         Where {$_ -notlike '*\.git*'} |
-        %{$_.LastWriteTime = (Get-Date)}
+        %{
+            $file = Get-Item $_
+            $file.LastWriteTime = (Get-Date)
+        }
         
         git add -A
         git commit -am ($tag + "[skip appveyor]")
