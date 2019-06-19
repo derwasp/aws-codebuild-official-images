@@ -51,12 +51,12 @@ RUN wget "https://bootstrap.pypa.io/get-pip.py" -O /tmp/get-pip.py \
     && rm -fr /var/lib/apt/lists/* /tmp/* /var/tmp/* 
  
 
-ENV JAVA_VERSION=6 \
-    JAVA_HOME="/usr/lib/jvm/java-6-openjdk-amd64" \
-    JDK_HOME="/usr/lib/jvm/java-6-openjdk-amd64" \
-    JRE_HOME="/usr/lib/jvm/java-6-openjdk-amd64/jre" \
+ENV JAVA_VERSION=7 \
+    JAVA_HOME="/usr/lib/jvm/java-7-openjdk-amd64" \
+    JDK_HOME="/usr/lib/jvm/java-7-openjdk-amd64" \
+    JRE_HOME="/usr/lib/jvm/java-7-openjdk-amd64/jre" \
     ANT_VERSION=1.9.6 \
-    MAVEN_VERSION=3.2.5 \
+    MAVEN_VERSION=3.3.3 \
     MAVEN_HOME="/usr/share/maven" \
     MAVEN_CONFIG="/root/.m2" \
     GRADLE_VERSION=2.7
