@@ -76,6 +76,13 @@ build_script:
             $file.LastWriteTime = (Get-Date)
         }
         
+        Get-ChildItem -Force -Path . -Recurse |
+        Select -ExpandProperty FullName |
+        Where {$_ -like '*.sh'} |
+        % {
+          git update-index --chmod=+x $_
+        }
+        
         git add -A
         git commit -am ($tag + "[skip appveyor]")
         Write-Host ("Pushing " + $tag)
