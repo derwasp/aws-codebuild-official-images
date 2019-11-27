@@ -1,26 +1,15 @@
-# Copyright 2017-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
-#
-# Licensed under the Amazon Software License (the "License"). You may not use this file except in compliance with the License.
-# A copy of the License is located at
-#
-#    http://aws.amazon.com/asl/
-#
-# or in the "license" file accompanying this file.
-# This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, express or implied.
-# See the License for the specific language governing permissions and limitations under the License.
-
 FROM ubuntu:18.04
 
 ENV RUBY_VERSION="2.6.4" \
- PYTHON_VERSION="3.7.4" \
+ PYTHON_VERSION="3.8.0" \
  PHP_VERSION=7.3.9 \
  JAVA_VERSION=11 \
- NODE_VERSION="10.16.3" \
- NODE_8_VERSION="8.16.0" \
- GOLANG_VERSION="1.13" \
- GOLANG_12_VERSION="1.12.9" \
- DOTNET_SDK_VERSION="2.2.402" \
- DOCKER_VERSION="18.09.6" \
+ NODE_12_VERSION="12.13.0" \
+ NODE_10_VERSION="10.17.0" \
+ GOLANG_VERSION="1.13.4" \
+ GOLANG_12_VERSION="1.12.13" \
+ DOTNET_SDK_VERSION="3.0.100" \
+ DOCKER_VERSION="19.03.1" \
  DOCKER_COMPOSE_VERSION="1.24.0"
 
 ARG CHINA_REGION
@@ -28,7 +17,7 @@ ARG CHINA_REGION
 #****************        Utilities     *********************************************
 ENV DOCKER_BUCKET="download.docker.com" \
     DOCKER_CHANNEL="stable" \
-    DOCKER_SHA256="1f3f6774117765279fce64ee7f76abbb5f260264548cf80631d68fb2d795bb09" \
+    DOCKER_SHA256="6e7d8e24ee46b13d7547d751696d01607d19c8224c1b2c867acc8c779e77734b" \
     DIND_COMMIT="3b5fac462d21ca164b3778647420016315289034" \
     GITVERSION_VERSION="4.0.0" \
     DEBIAN_FRONTEND="noninteractive" \
@@ -142,7 +131,7 @@ RUN set -ex \
 
 #****************        PYTHON     *********************************************
 ENV PATH="/usr/local/bin:$PATH" \
-    GPG_KEY="0D96DF4D4110E5C43FBFB17F2D347EA6AA65421D" \
+    GPG_KEY="E3FF2839C048B25C084DEBE9B26995E310250568" \
     PYTHON_PIP_VERSION="19.1.1" \
     LC_ALL=C.UTF-8 \
     LANG=C.UTF-8
@@ -309,8 +298,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
  RUN git clone https://github.com/tj/n $N_SRC_DIR \
      && cd $N_SRC_DIR && make install \
-     && n $NODE_8_VERSION && npm install --save-dev -g grunt && npm install --save-dev -g grunt-cli && npm install --save-dev -g webpack \
-     && n $NODE_VERSION && npm install --save-dev -g grunt && npm install --save-dev -g grunt-cli && npm install --save-dev -g webpack \
+     && n $NODE_10_VERSION && npm install --save-dev -g grunt && npm install --save-dev -g grunt-cli && npm install --save-dev -g webpack \
+     && n $NODE_12_VERSION && npm install --save-dev -g grunt && npm install --save-dev -g grunt-cli && npm install --save-dev -g webpack \
      && curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add - \
      && echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list \
      && apt-get update && apt-get install -y --no-install-recommends yarn \
@@ -438,7 +427,7 @@ RUN set -ex \
 #****************     END JAVA     ****************************************************
 
 #****************     GO (latest 1.13)    **********************************************************
-ENV GOLANG_DOWNLOAD_SHA256="68a2297eb099d1a76097905a2ce334e3155004ec08cdea85f24527be3c48e856" \
+ENV GOLANG_DOWNLOAD_SHA256="692d17071736f74be04a72a06dab9cac1cd759377bd85316e52b2227604c004c" \
     GOPATH="/go" \
     DEP_VERSION="0.5.1" \
     DEP_BINARY="dep-linux-amd64"
@@ -463,7 +452,7 @@ ENV PATH="$GOPATH/bin:/usr/local/go/bin:$PATH"
 
 #***************    GO 1.12   *************************************************
 
-ENV GOLANG_12_DOWNLOAD_SHA256="ac2a6efcc1f5ec8bdc0db0a988bb1d301d64b6d61b7e8d9e42f662fbb75a2b9b"
+ENV GOLANG_12_DOWNLOAD_SHA256="da036454cb3353f9f507f0ceed4048feac611065e4e1818b434365eb32ac9bdc"
 
 RUN set -ex \
     && wget "https://dl.google.com/go/go$GOLANG_12_VERSION.linux-amd64.tar.gz" -O /tmp/golang.tar.gz \
@@ -491,7 +480,7 @@ RUN set -ex \
 
 # Install .NET Core SDK
 ENV DOTNET_SDK_DOWNLOAD_URL https://dotnetcli.blob.core.windows.net/dotnet/Sdk/$DOTNET_SDK_VERSION/dotnet-sdk-$DOTNET_SDK_VERSION-linux-x64.tar.gz
-ENV DOTNET_SDK_DOWNLOAD_SHA 81937de0874ee837e3b42e36d1cf9e04bd9deff6ba60d0162ae7ca9336a78f733e624136d27f559728df3f681a72a669869bf91d02db47c5331398c0cfda9b44
+ENV DOTNET_SDK_DOWNLOAD_SHA 766da31f9a0bcfbf0f12c91ea68354eb509ac2111879d55b656f19299c6ea1c005d31460dac7c2a4ef82b3edfea30232c82ba301fb52c0ff268d3e3a1b73d8f7
 
 RUN set -ex \
     && curl -SL $DOTNET_SDK_DOWNLOAD_URL --output dotnet.tar.gz \
@@ -574,6 +563,18 @@ RUN set -ex \
     && ln -s /opt/chromedriver-$CHROME_DRIVER_VERSION /usr/bin/chromedriver \
     && chromedriver --version
 
+RUN set -ex \
+   && apt-get install -y openssl \
+   && curl -o stunnel-5.55.tar.gz https://www.stunnel.org/downloads/stunnel-5.55.tar.gz \
+   && tar xvfz stunnel-5.55.tar.gz \
+   && cd stunnel-5.55 \
+   && ./configure \
+   && make \
+   && make install \
+   && openssl genrsa -out key.pem 2048 \
+   && openssl req -new -x509 -key key.pem -out cert.pem -days 1095 -subj "/C=US/ST=Washington/L=Seattle/O=Amazon/OU=Codebuild/CN=codebuild.amazon.com" \
+   && cat key.pem cert.pem >> /usr/local/etc/stunnel/stunnel.pem \
+   && cd .. ; rm -rf stunnel-5.55* \
+   && apt-get clean
+
 ENTRYPOINT ["dockerd-entrypoint.sh"]
-
-
