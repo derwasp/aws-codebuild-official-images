@@ -128,7 +128,7 @@ RUN curl -sS -o /usr/local/bin/aws-iam-authenticator https://amazon-eks.s3.us-we
 RUN set -ex \
     && mkdir /tmp/ssm \
     && cd /tmp/ssm \
-    && wget https://s3.eu-north-1.amazonaws.com/amazon-ssm-eu-north-1/latest/debian_amd64/amazon-ssm-agent.deb \
+    && wget https://s3.amazonaws.com/amazon-ssm-us-east-1/2.3.1644.0/debian_amd64/amazon-ssm-agent.deb \
     && dpkg -i amazon-ssm-agent.deb
 
 # Install env tools for runtimes
@@ -217,8 +217,8 @@ RUN set -ex \
 
 #****************      NODEJS     ****************************************************
 
-ENV NODE_12_VERSION="12.18.0" \
-    NODE_10_VERSION="10.21.0"
+ENV NODE_12_VERSION="12.19.1" \
+    NODE_10_VERSION="10.23.0"
 
 RUN     n $NODE_10_VERSION && npm install --save-dev -g -f grunt && npm install --save-dev -g -f grunt-cli && npm install --save-dev -g -f webpack \
      && n $NODE_12_VERSION && npm install --save-dev -g -f grunt && npm install --save-dev -g -f grunt-cli && npm install --save-dev -g -f webpack \
@@ -233,7 +233,7 @@ RUN     n $NODE_10_VERSION && npm install --save-dev -g -f grunt && npm install 
 #**************** RUBY *********************************************************
 
 ENV RUBY_26_VERSION="2.6.6" \
-    RUBY_27_VERSION="2.7.1"
+    RUBY_27_VERSION="2.7.2"
 
 RUN rbenv install $RUBY_26_VERSION; rm -rf /tmp/*
 RUN rbenv install $RUBY_27_VERSION; rm -rf /tmp/*; rbenv global $RUBY_27_VERSION;ruby -v
@@ -244,7 +244,7 @@ RUN rbenv install $RUBY_27_VERSION; rm -rf /tmp/*; rbenv global $RUBY_27_VERSION
 ENV PYTHON_38_VERSION="3.8.3" \
     PYTHON_37_VERSION="3.7.7"
 
-ENV PYTHON_PIP_VERSION=19.3.1
+ENV PYTHON_PIP_VERSION=20.2.4
 
 COPY tools/runtime_configs/python/$PYTHON_37_VERSION /root/.pyenv/plugins/python-build/share/python-build/$PYTHON_37_VERSION
 RUN   env PYTHON_CONFIGURE_OPTS="--enable-shared" pyenv install $PYTHON_37_VERSION; rm -rf /tmp/*
@@ -252,7 +252,7 @@ RUN   pyenv global  $PYTHON_37_VERSION
 RUN set -ex \
     && pip3 install --no-cache-dir --upgrade --force-reinstall "pip==$PYTHON_PIP_VERSION" \
     && pip3 install --no-cache-dir --upgrade "PyYAML==5.3.1" \
-    && pip3 install --no-cache-dir --upgrade setuptools wheel aws-sam-cli awscli boto3 pipenv virtualenv
+    && pip3 install --no-cache-dir --upgrade setuptools wheel aws-sam-cli awscli boto3 pipenv virtualenv --use-feature=2020-resolver
 
 
 COPY tools/runtime_configs/python/$PYTHON_38_VERSION /root/.pyenv/plugins/python-build/share/python-build/$PYTHON_38_VERSION
@@ -261,7 +261,7 @@ RUN   pyenv global  $PYTHON_38_VERSION
 RUN set -ex \
     && pip3 install --no-cache-dir --upgrade --force-reinstall "pip==$PYTHON_PIP_VERSION" \
     && pip3 install --no-cache-dir --upgrade "PyYAML==5.3.1" \
-    && pip3 install --no-cache-dir --upgrade setuptools wheel aws-sam-cli awscli boto3 pipenv virtualenv
+    && pip3 install --no-cache-dir --upgrade setuptools wheel aws-sam-cli awscli boto3 pipenv virtualenv --use-feature=2020-resolver
 
 #**************** END PYTHON *****************************************************
 
@@ -458,7 +458,7 @@ VOLUME /var/lib/docker
 FROM runtimes_n_corretto AS std_v4
 
 # GoLang 14
-ENV GOLANG_14_VERSION="1.14.7"
+ENV GOLANG_14_VERSION="1.14.12"
 RUN goenv install $GOLANG_14_VERSION; rm -rf /tmp/*; \
     goenv global  $GOLANG_14_VERSION
 
