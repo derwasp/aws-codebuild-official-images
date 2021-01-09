@@ -21,10 +21,6 @@ ca-certificates-java : /usr/share/doc/ca-certificates-java/copyright
 ----------------
 curl : /usr/share/doc/curl/copyright
 ----------------
-cvs : /usr/share/doc/cvs/copyright
-----------------
-cvsps : /usr/share/doc/cvsps/copyright
-----------------
 dirmngr : /usr/share/doc/dirmngr/copyright
 ----------------
 docbook-xml : /usr/share/doc/docbook-xml/copyright
@@ -54,8 +50,6 @@ git : /usr/share/doc/git/copyright
 groff : /usr/share/doc/groff/copyright
 ----------------
 gzip : /usr/share/doc/gzip/copyright
-----------------
-imagemagick : /usr/share/doc/imagemagick/copyright
 ----------------
 iptables : /usr/share/doc/iptables/copyright
 ----------------
@@ -183,11 +177,7 @@ locales : /usr/share/doc/locales/copyright
 ----------------
 make : /usr/share/doc/make/copyright
 ----------------
-mercurial : /usr/share/doc/mercurial/copyright
-----------------
 mlocate : /usr/share/doc/mlocate/copyright
-----------------
-mono-devel : /usr/share/doc/mono-devel/copyright
 ----------------
 netbase : /usr/share/doc/netbase/copyright
 ----------------
@@ -222,8 +212,6 @@ sgml-base : /usr/share/doc/sgml-base/copyright
 sgml-data : /usr/share/doc/sgml-data/copyright
 ----------------
 software-properties-common : /usr/share/doc/software-properties-common/copyright
-----------------
-subversion : /usr/share/doc/subversion/copyright
 ----------------
 tar : /usr/share/doc/tar/copyright
 ----------------
