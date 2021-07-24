@@ -9,7 +9,7 @@
 # This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, express or implied.
 # See the License for the specific language governing permissions and limitations under the License.
 
-FROM ubuntu:20.04 AS core
+FROM public.ecr.aws/ubuntu/ubuntu:20.04 AS core
 
 ARG DEBIAN_FRONTEND="noninteractive"
 
@@ -41,7 +41,7 @@ RUN set -ex \
           libglib2.0-dev libhttp-date-perl libio-pty-perl libjpeg-dev \
           libkrb5-dev liblzma-dev libmagickcore-dev libmagickwand-dev \
           libmysqlclient-dev libncurses5-dev libncursesw5-dev libonig-dev \
-          libpq-dev libreadline-dev libserf-1-1 libsqlite3-dev libssl-dev \
+          libpq-dev libreadline-dev libserf-1-1 libsodium-dev libsqlite3-dev libssl-dev \
           libsvn1 libsvn-perl libtcl8.6 libtidy-dev libtimedate-perl \
           libtool libwebp-dev libxml2-dev libxml2-utils libxslt1-dev \
           libyaml-dev libyaml-perl llvm locales make mlocate \
@@ -226,17 +226,18 @@ RUN rbenv install $RUBY_27_VERSION; rm -rf /tmp/*; rbenv global $RUBY_27_VERSION
 
 #**************** PYTHON *****************************************************
 ENV PYTHON_37_VERSION="3.7.10"
-ENV PYTHON_38_VERSION="3.8.8"
-ENV PYTHON_39_VERSION="3.9.2"
+ENV PYTHON_38_VERSION="3.8.10"
+ENV PYTHON_39_VERSION="3.9.5"
 
-ARG PYTHON_PIP_VERSION=20.3.3
+ARG PYTHON_PIP_VERSION=21.1.2
+ENV PYYAML_VERSION=5.4.1
 
 COPY tools/runtime_configs/python/$PYTHON_37_VERSION /root/.pyenv/plugins/python-build/share/python-build/$PYTHON_37_VERSION
 RUN   env PYTHON_CONFIGURE_OPTS="--enable-shared" pyenv install $PYTHON_37_VERSION; rm -rf /tmp/*
 RUN   pyenv global  $PYTHON_37_VERSION
 RUN set -ex \
     && pip3 install --no-cache-dir --upgrade --force-reinstall "pip==$PYTHON_PIP_VERSION" \
-    && pip3 install --no-cache-dir --upgrade "PyYAML==5.3.1" \
+    && pip3 install --no-cache-dir --upgrade "PyYAML==$PYYAML_VERSION" \
     && pip3 install --no-cache-dir --upgrade setuptools wheel aws-sam-cli boto3 pipenv virtualenv --use-feature=2020-resolver
 
 COPY tools/runtime_configs/python/$PYTHON_38_VERSION /root/.pyenv/plugins/python-build/share/python-build/$PYTHON_38_VERSION
@@ -244,7 +245,7 @@ RUN   env PYTHON_CONFIGURE_OPTS="--enable-shared" pyenv install $PYTHON_38_VERSI
 RUN   pyenv global  $PYTHON_38_VERSION
 RUN set -ex \
     && pip3 install --no-cache-dir --upgrade --force-reinstall "pip==$PYTHON_PIP_VERSION" \
-    && pip3 install --no-cache-dir --upgrade "PyYAML==5.3.1" \
+    && pip3 install --no-cache-dir --upgrade "PyYAML==$PYYAML_VERSION" \
     && pip3 install --no-cache-dir --upgrade setuptools wheel aws-sam-cli boto3 pipenv virtualenv --use-feature=2020-resolver
 
 COPY tools/runtime_configs/python/$PYTHON_39_VERSION /root/.pyenv/plugins/python-build/share/python-build/$PYTHON_39_VERSION
@@ -252,7 +253,7 @@ RUN   env PYTHON_CONFIGURE_OPTS="--enable-shared" pyenv install $PYTHON_39_VERSI
 RUN   pyenv global  $PYTHON_39_VERSION
 RUN set -ex \
     && pip3 install --no-cache-dir --upgrade --force-reinstall "pip==$PYTHON_PIP_VERSION" \
-    && pip3 install --no-cache-dir --upgrade "PyYAML==5.3.1" \
+    && pip3 install --no-cache-dir --upgrade "PyYAML==$PYYAML_VERSION" \
     && pip3 install --no-cache-dir --upgrade setuptools wheel aws-sam-cli boto3 pipenv virtualenv --use-feature=2020-resolver
 
 #**************** END PYTHON *****************************************************
@@ -282,9 +283,11 @@ RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/bin -
 #****************      END PHP     ****************************************************
 
 #****************     GOLANG     ****************************************************
-ENV GOLANG_15_VERSION="1.15.6"
+ENV GOLANG_15_VERSION="1.15.12"
+ENV GOLANG_16_VERSION="1.16.4"
 
-RUN goenv install $GOLANG_15_VERSION; rm -rf /tmp/*; \
+RUN goenv install $GOLANG_15_VERSION;\
+    goenv install $GOLANG_16_VERSION; rm -rf /tmp/*; \
     goenv global  $GOLANG_15_VERSION
 
 RUN go get -u github.com/golang/dep/cmd/dep
